@@ -1,0 +1,53 @@
+---
+import { Icon } from "astro-icon/components";
+import type { AuthUser } from "../lib/auth";
+
+interface Props {
+  user: AuthUser | null;
+}
+
+const { user } = Astro.props;
+const pathname = Astro.url.pathname;
+const isHome = pathname === "/";
+const isBookmarks = pathname === "/bookmarks";
+
+const itemClass = "flex flex-col items-center gap-1 rounded-md px-2 py-2";
+const itemActive = (active: boolean) =>
+  active ? "text-brand" : "text-ink-soft hover:text-ink";
+---
+
+<nav
+  class="fixed inset-x-0 bottom-0 z-[999] border-t border-neutral bg-white/95 backdrop-blur lg:hidden"
+  aria-label="Navigasi utama"
+  style="padding-bottom: env(safe-area-inset-bottom);"
+>
+  <div class="mx-auto grid max-w-lg grid-cols-3 items-end px-4 pt-1.5 pb-1">
+    <a href="/" class={`${itemClass} ${itemActive(isHome)}`} aria-current={isHome ? "page" : undefined}>
+      <Icon name="lucide:home" class="size-6" />
+      <span class="text-[11px] font-bold">Beranda</span>
+    </a>
+
+    {user ? (
+      <button
+        type="button"
+        class="upload-trigger -mt-7 flex size-14 items-center justify-center rounded-full bg-brand text-white shadow-floating transition-transform duration-200 hover:scale-105 active:scale-95"
+        aria-label="Upload meme"
+      >
+        <Icon name="lucide:plus" class="size-7" />
+      </button>
+    ) : (
+      <a
+        href="/login"
+        class="-mt-7 flex size-14 items-center justify-center rounded-full bg-brand text-white shadow-floating transition-transform duration-200 hover:scale-105 active:scale-95"
+        aria-label="Upload meme"
+      >
+        <Icon name="lucide:plus" class="size-7" />
+      </a>
+    )}
+
+    <a href="/bookmarks" class={`${itemClass} ${itemActive(isBookmarks)}`} aria-current={isBookmarks ? "page" : undefined}>
+      <Icon name="lucide:bookmark" class="size-6" />
+      <span class="text-[11px] font-bold">Bookmark</span>
+    </a>
+  </div>
+</nav>

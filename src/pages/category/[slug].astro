@@ -1,64 +1,36 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import MasonryGrid from "../../components/MasonryGrid.astro";
-import LoadMore from "../../components/LoadMore.astro";
-import CategoryTabs from "../../components/CategoryTabs.astro";
+import FeedSection from "../../components/FeedSection.astro";
 import { Icon } from "astro-icon/components";
 import { supabase } from "../../lib/supabase";
-import type { Category, Post } from "../../lib/types";
+import type { Category } from "../../lib/types";
 
 const { slug } = Astro.params;
-const LIMIT = 20;
-
 const { data: category } = await supabase
   .from("categories")
   .select("*")
   .eq("slug", slug)
   .single();
 const cat = (category as Category) ?? null;
-
-let posts: Post[] = [];
-if (cat) {
-  const { data } = await supabase
-    .from("posts")
-    .select("*, categories(name, slug, emoji)")
-    .eq("category_id", cat.id)
-    .order("created_at", { ascending: false })
-    .range(0, LIMIT - 1);
-  posts = (data as Post[]) ?? [];
-}
 ---
 
-<Layout
-  title={cat ? `${cat.name} — HAHA!` : "Kategori tidak ditemukan"}
->
+<Layout title={cat ? `${cat.name} — HAHA!` : "Kategori tidak ditemukan"}>
   {cat ? (
     <>
-      <CategoryTabs />
       <section class="mb-8 flex items-center gap-4 py-6">
         <span class="flex size-16 items-center justify-center rounded-md bg-white text-4xl shadow-raised">{cat.emoji}</span>
         <div>
           <h1 class="font-display text-[30px] font-semibold text-ink">{cat.name}</h1>
-          <p class="text-[12px] text-ink-soft">{posts.length} meme</p>
+          <p class="text-[12px] text-ink-soft"><span id="cat-count">…</span> meme</p>
         </div>
       </section>
-
-      {posts.length > 0 ? (
-        <>
-          <div id="masonry">
-            <MasonryGrid posts={posts} />
-          </div>
-          <LoadMore offset={posts.length} limit={LIMIT} categorySlug={cat.slug} />
-        </>
-      ) : (
-        <div class="flex flex-col items-center gap-4 py-24 text-center">
-          <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
-            <Icon name="lucide:inbox" class="size-8 text-ink-soft" />
-          </span>
-          <p class="text-[16px] font-bold text-ink">Belum ada meme di kategori {cat.name}</p>
-          <p class="text-[12px] text-ink-soft">Jadi orang pertama yang upload di kategori ini!</p>
-        </div>
-      )}
+      <FeedSection
+        url={`/api/posts?category=${cat.slug}`}
+        countEl="#cat-count"
+        emptyTitle={`Belum ada meme di kategori ${cat.name}`}
+        emptySub="Jadi orang pertama yang upload di kategori ini!"
+        emptyIcon="lucide:inbox"
+      />
     </>
   ) : (
     <div class="flex flex-col items-center gap-4 py-24 text-center">

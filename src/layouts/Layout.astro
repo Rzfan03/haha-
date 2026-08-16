@@ -2,6 +2,8 @@
 import "../styles/global.css";
 import Header from "../components/Header.astro";
 import Sidebar from "../components/Sidebar.astro";
+import BottomBar from "../components/BottomBar.astro";
+import CategoryTabs from "../components/CategoryTabs.astro";
 import UploadModal from "../components/UploadModal.astro";
 import Toast from "../components/Toast.astro";
 import { getCategories } from "../lib/categories";
@@ -54,12 +56,14 @@ const user = Astro.locals.user;
     <div class="lg:flex lg:items-start">
       <Sidebar categories={categories} user={user} />
       <div class="min-w-0 flex-1">
-        <Header categories={categories} user={user} />
-        <main class="mx-auto max-w-[1440px] px-4 py-8 sm:px-6">
+        <Header user={user} />
+        <CategoryTabs />
+        <main class="mx-auto max-w-[1440px] px-4 py-8 pb-28 sm:px-6 lg:pb-8">
           <slot />
         </main>
       </div>
     </div>
+    <BottomBar user={user} />
     <UploadModal categories={categories} />
     <Toast />
   </body>

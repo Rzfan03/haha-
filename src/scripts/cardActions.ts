@@ -13,8 +13,8 @@ export function bindCardActions(root: ParentNode = document): void {
     const bookmarkBtn = card.querySelector<HTMLButtonElement>("[data-bookmark-btn]");
     const bookmarkIcon = bookmarkBtn?.querySelector<HTMLElement>("[data-bookmark-icon]");
 
-    let liked = false;
-    let saved = false;
+    let liked = card.dataset.liked === "true";
+    let saved = card.dataset.saved === "true";
     let likeCount = Number(likeBtn?.dataset.count || 0);
 
     function paintLike(animate: boolean) {
@@ -35,6 +35,9 @@ export function bindCardActions(root: ParentNode = document): void {
       bookmarkIcon?.classList.toggle("fill-brand", saved);
       bookmarkIcon?.classList.toggle("text-ink", !saved);
     }
+
+    paintLike(false);
+    paintBookmark();
 
     likeBtn?.addEventListener("click", async () => {
       if (likeBtn.disabled) return;

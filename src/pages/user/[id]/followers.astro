@@ -1,39 +1,10 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
 import { Icon } from "astro-icon/components";
-import VerifiedBadge from "../../../components/VerifiedBadge.astro";
-import { getUserById, serviceClient } from "../../../lib/auth";
-import type { User } from "../../../lib/types";
+import { getUserById } from "../../../lib/auth";
 
 const { id } = Astro.params;
 const user = await getUserById(id ?? "");
-const viewer = Astro.locals.user;
-
-let users: User[] = [];
-const followingIds = new Set<string>();
-
-if (user) {
-  const db = serviceClient();
-  const { data: rows } = await db
-    .from("follows")
-    .select("follower_id")
-    .eq("following_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(100);
-  const ids = (rows ?? []).map((r) => r.follower_id);
-  if (ids.length) {
-    const { data } = await db.from("users").select("id, display_name, avatar_url, banner_url, bio, is_verified, created_at").in("id", ids);
-    users = (data as User[]) ?? [];
-  }
-  if (viewer) {
-    const { data: rel } = await db
-      .from("follows")
-      .select("following_id")
-      .eq("follower_id", viewer.id)
-      .in("following_id", ids.length ? ids : [viewer.id]);
-    (rel ?? []).forEach((r) => followingIds.add(r.following_id));
-  }
-}
 ---
 
 <Layout title={user ? `Pengikut ${user.display_name} — HAHA!` : "Pengikut"} description={`Pengikut ${user?.display_name ?? ""}`}>
@@ -45,41 +16,22 @@ if (user) {
       </a>
       <h1 class="mb-6 font-display text-[22px] font-semibold text-ink">Pengikut {user.display_name}</h1>
 
-      {users.length > 0 ? (
-        <ul class="space-y-3">
-          {users.map((u) => {
-            const isOwn = viewer?.id === u.id;
-            const following = followingIds.has(u.id);
-            return (
-              <li class="flex items-center justify-between gap-3 rounded-md bg-white p-4 shadow-raised">
-                <a href={`/user/${u.id}`} class="flex min-w-0 items-center gap-3">
-                  <span class="flex size-11 shrink-0 items-center justify-center rounded-md bg-brand text-[15px] font-bold text-white">
-                    {u.avatar_url ? <img src={u.avatar_url} alt="" class="size-full rounded-md object-cover" /> : u.display_name.charAt(0).toUpperCase()}
-                  </span>
-                  <span class="flex min-w-0 items-center gap-1 text-[14px] font-bold text-ink">
-                    <span class="truncate">{u.display_name}</span>
-                    {u.is_verified && <VerifiedBadge class="size-4 shrink-0" />}
-                  </span>
-                </a>
-                {!isOwn && viewer && (
-                  <button
-                    class="follow-btn flex h-10 shrink-0 items-center rounded-md px-5 text-[13px] font-bold transition-all duration-200"
-                    data-user-id={u.id}
-                    data-following={String(following)}
-                  >
-                    {following ? "Mengikuti" : "Ikuti"}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <div class="flex flex-col items-center gap-3 rounded-md bg-white py-16 text-center shadow-raised">
-          <Icon name="lucide:users" class="size-8 text-ink-soft" />
-          <p class="text-[14px] font-bold text-ink">Belum ada pengikut</p>
-        </div>
-      )}
+      <ul id="user-list" class="space-y-3" data-id={user.id} data-kind="followers">
+        {
+          Array.from({ length: 8 }).map(() => (
+            <li class="flex items-center gap-3 rounded-md bg-white p-4 shadow-raised">
+              <span class="skeleton size-11 shrink-0 rounded-md"></span>
+              <span class="skeleton h-4 w-40 rounded-md"></span>
+              <span class="skeleton ml-auto h-10 w-24 rounded-md"></span>
+            </li>
+          ))
+        }
+      </ul>
+
+      <div id="user-empty" class="hidden flex-col items-center gap-3 rounded-md bg-white py-16 text-center shadow-raised">
+        <Icon name="lucide:users" class="size-8 text-ink-soft" />
+        <p class="text-[14px] font-bold text-ink">Belum ada pengikut</p>
+      </div>
     </>
   ) : (
     <p class="py-24 text-center text-[14px] text-ink-soft">Pengguna tidak ditemukan.</p>
@@ -87,41 +39,7 @@ if (user) {
 </Layout>
 
 <script>
-  import { redirectToLoginIfNeeded } from "../../../lib/session";
-
-  document.querySelectorAll<HTMLButtonElement>(".follow-btn").forEach((btn) => {
-    if (btn.dataset.bound) return;
-    btn.dataset.bound = "1";
-    const userId = btn.dataset.userId!;
-    let following = btn.dataset.following === "true";
-
-    function paint() {
-      btn.classList.toggle("bg-brand", !following);
-      btn.classList.toggle("text-white", !following);
-      btn.classList.toggle("bg-offwhite", following);
-      btn.classList.toggle("text-ink", following);
-      btn.textContent = following ? "Mengikuti" : "Ikuti";
-    }
-
-    btn.addEventListener("click", async () => {
-      if (!(await redirectToLoginIfNeeded())) return;
-      btn.disabled = true;
-      const next = !following;
-      following = next;
-      paint();
-      try {
-        const res = await fetch("/api/follow", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ target_id: userId }),
-        });
-        if (!res.ok) throw new Error();
-      } catch {
-        following = !next;
-        paint();
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  });
+  import { initUserList } from "../../../scripts/initUserList";
+  const list = document.getElementById("user-list") as HTMLElement | null;
+  if (list?.dataset.id && list.dataset.kind) initUserList(list.dataset.id, list.dataset.kind as "followers" | "following");
 </script>

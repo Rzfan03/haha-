@@ -158,6 +158,15 @@ label[for] {
   animation: shimmer 1.6s linear infinite;
 }
 
+/* Hide scrollbar (horizontal category strip) */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 12px;

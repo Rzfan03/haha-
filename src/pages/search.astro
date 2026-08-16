@@ -1,42 +1,11 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import MasonryGrid from "../components/MasonryGrid.astro";
-import LoadMore from "../components/LoadMore.astro";
-import VerifiedBadge from "../components/VerifiedBadge.astro";
+import FeedSection from "../components/FeedSection.astro";
 import { Icon } from "astro-icon/components";
-import { serviceClient } from "../lib/auth";
-import type { Post, User } from "../lib/types";
 
 const q = (Astro.url.searchParams.get("q") ?? "").trim();
-const LIMIT = 20;
-const USER_LIMIT = 12;
-
-let posts: Post[] = [];
-let users: User[] = [];
-let title = "Search — HAHA!";
-let description = "Cari meme lucu";
-
-if (q) {
-  title = `Cari "${q}" — HAHA!`;
-  description = `Hasil pencarian untuk "${q}"`;
-  const db = serviceClient();
-  const [postsRes, usersRes] = await Promise.all([
-    db
-      .from("posts")
-      .select("*, categories(name, slug, emoji)")
-      .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
-      .order("created_at", { ascending: false })
-      .range(0, LIMIT - 1),
-    db
-      .from("users")
-      .select("id, display_name, avatar_url, banner_url, bio, is_verified, created_at")
-      .ilike("display_name", `%${q}%`)
-      .order("created_at", { ascending: false })
-      .limit(USER_LIMIT),
-  ]);
-  posts = (postsRes.data as Post[]) ?? [];
-  users = (usersRes.data as User[]) ?? [];
-}
+const title = q ? `Cari "${q}" — HAHA!` : "Search — HAHA!";
+const description = q ? `Hasil pencarian untuk "${q}"` : "Cari meme lucu";
 ---
 
 <Layout title={title} description={description}>
@@ -45,60 +14,94 @@ if (q) {
       {q ? <>Hasil untuk <span class="text-brand">"{q}"</span></> : "Pencarian"}
     </h1>
     <p class="mt-1 text-[12px] text-ink-soft">
-      {q
-        ? `${users.length} pengguna dan ${posts.length} meme ditemukan`
-        : "Ketik kata kunci di kolom search untuk mencari meme atau pengguna."}
+      {q ? (
+        <>
+          <span id="user-count">0</span> pengguna dan <span id="post-count">0</span> meme ditemukan
+        </>
+      ) : (
+        "Ketik kata kunci di kolom search untuk mencari meme atau pengguna."
+      )}
     </p>
   </section>
 
-  {q && users.length > 0 && (
-    <section class="mb-10">
+  {q && (
+    <section id="user-section" class="mb-10">
       <h2 class="mb-4 flex items-center gap-2 font-display text-[18px] font-semibold text-ink">
         <Icon name="lucide:users" class="size-5 text-brand" />
         Pengguna
       </h2>
-      <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {users.map((u) => (
-          <li>
-            <a
-              href={`/user/${u.id}`}
-              class="flex items-center gap-3 rounded-md bg-white p-3 shadow-raised transition-all duration-200 hover:shadow-floating"
-            >
-              <span class="flex size-11 shrink-0 items-center justify-center rounded-md bg-brand text-[15px] font-bold text-white">
-                {u.avatar_url ? (
-                  <img src={u.avatar_url} alt="" class="size-full rounded-md object-cover" />
-                ) : (
-                  u.display_name.charAt(0).toUpperCase()
-                )}
-              </span>
-              <span class="flex min-w-0 flex-1 items-center gap-1 text-[14px] font-bold text-ink">
-                <span class="truncate">{u.display_name}</span>
-                {u.is_verified && <VerifiedBadge class="size-4 shrink-0" />}
-              </span>
-              <Icon name="lucide:chevron-right" class="size-4 shrink-0 text-ink-soft" />
-            </a>
-          </li>
-        ))}
+      <ul id="user-list" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" data-q={q}>
+        {
+          Array.from({ length: 6 }).map(() => (
+            <li class="flex items-center gap-3 rounded-md bg-white p-3 shadow-raised">
+              <span class="skeleton size-11 shrink-0 rounded-md"></span>
+              <span class="skeleton h-4 flex-1 rounded-md"></span>
+            </li>
+          ))
+        }
       </ul>
     </section>
   )}
 
-  {q && posts.length > 0 && (
-    <>
-      <div id="masonry">
-        <MasonryGrid posts={posts} />
-      </div>
-      <LoadMore offset={posts.length} limit={LIMIT} query={q} />
-    </>
-  )}
-
-  {q && posts.length === 0 && users.length === 0 && (
+  {q ? (
+    <FeedSection
+      url={`/api/posts?q=${encodeURIComponent(q)}`}
+      countEl="#post-count"
+      emptyTitle="Tidak ada meme ditemukan"
+      emptySub="Coba kata kunci lain untuk mencari meme."
+      emptyIcon="lucide:search-x"
+    />
+  ) : (
     <div class="flex flex-col items-center gap-4 py-24 text-center">
       <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
-        <Icon name="lucide:search-x" class="size-8 text-ink-soft" />
+        <Icon name="lucide:search" class="size-8 text-ink-soft" />
       </span>
-      <p class="text-[16px] font-bold text-ink">"{q}" tidak ditemukan</p>
-      <p class="text-[12px] text-ink-soft">Coba kata kunci lain, atau upload meme-nya kalau belum ada!</p>
+      <p class="text-[16px] font-bold text-ink">Cari meme atau pengguna</p>
+      <p class="text-[12px] text-ink-soft">Tulis kata kunci di kolom search di atas.</p>
     </div>
   )}
 </Layout>
+
+<script>
+  const q = new URLSearchParams(location.search).get("q") || "";
+  if (q) {
+    const list = document.getElementById("user-list") as HTMLElement | null;
+    const section = document.getElementById("user-section") as HTMLElement | null;
+    const countEl = document.getElementById("user-count") as HTMLElement | null;
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    const checkSvg =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4 shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+    try {
+      const res = await fetch(`/api/users?q=${encodeURIComponent(q)}&limit=12`);
+      const data = await res.json();
+      const users = data.users ?? [];
+      if (!list || !section) {
+        /* no-op */
+      } else if (!users.length) {
+        section.remove();
+      } else {
+        list.innerHTML = users
+          .map(
+            (u: any) => `<li>
+              <a href="/user/${esc(u.id)}" class="flex items-center gap-3 rounded-md bg-white p-3 shadow-raised transition-all duration-200 hover:shadow-floating">
+                <span class="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-brand text-[15px] font-bold text-white">
+                  ${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="" class="size-full rounded-md object-cover" />` : esc(u.display_name.charAt(0).toUpperCase())}
+                </span>
+                <span class="flex min-w-0 flex-1 items-center gap-1 text-[14px] font-bold text-ink">
+                  <span class="truncate">${esc(u.display_name)}</span>
+                  ${u.is_verified ? checkSvg : ""}
+                </span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4 shrink-0 text-ink-soft"><path d="m9 18 6-6-6-6"/></svg>
+              </a>
+            </li>`
+          )
+          .join("");
+        if (countEl) countEl.textContent = String(users.length);
+      }
+    } catch {
+      section?.remove();
+    }
+  }
+</script>

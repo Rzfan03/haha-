@@ -1,0 +1,65 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  url: string;
+  emptyTitle: string;
+  emptySub?: string;
+  emptyIcon?: string;
+  countEl?: string;
+  limit?: number;
+  gridClass?: string;
+}
+
+const {
+  url,
+  emptyTitle,
+  emptySub = "",
+  emptyIcon = "lucide:image-off",
+  countEl = "",
+  limit = 20,
+  gridClass = "columns-2 gap-3 sm:gap-4 lg:columns-3 xl:columns-4",
+} = Astro.props;
+
+const uid = url.replace(/[^a-z0-9]/gi, "").slice(0, 12);
+const cfg = {
+  url,
+  gridId: `masonry-${uid}`,
+  skeletonId: `skeleton-${uid}`,
+  emptyId: `empty-${uid}`,
+  moreWrapId: `more-${uid}`,
+  countEl,
+  limit,
+};
+---
+
+<div class="feed-section" data-cfg={JSON.stringify(cfg)}>
+  <div id={cfg.gridId} class={gridClass}></div>
+
+  <div id={cfg.skeletonId} class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" aria-hidden="true">
+    {
+      Array.from({ length: 8 }).map(() => (
+        <div class="space-y-2">
+          <div class="skeleton aspect-square rounded-md"></div>
+          <div class="skeleton h-10 rounded-md"></div>
+        </div>
+      ))
+    }
+  </div>
+
+  <div id={cfg.emptyId} class="hidden flex-col items-center gap-4 py-24 text-center">
+    <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
+      <Icon name={emptyIcon} class="size-8 text-ink-soft" />
+    </span>
+    <p class="text-[16px] font-bold text-ink">{emptyTitle}</p>
+    {emptySub && <p class="text-[12px] text-ink-soft">{emptySub}</p>}
+  </div>
+
+  <div id={cfg.moreWrapId} class="mt-10 hidden justify-center"></div>
+</div>
+
+<script>
+  import { initFeed } from "../scripts/initFeed";
+  const el = document.querySelector<HTMLElement>(".feed-section");
+  if (el?.dataset.cfg) initFeed(JSON.parse(el.dataset.cfg));
+</script>

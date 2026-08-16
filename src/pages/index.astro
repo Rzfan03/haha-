@@ -1,38 +1,12 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import MasonryGrid from "../components/MasonryGrid.astro";
-import LoadMore from "../components/LoadMore.astro";
-import CategoryTabs from "../components/CategoryTabs.astro";
-import { Icon } from "astro-icon/components";
-import { supabase } from "../lib/supabase";
-import type { Post } from "../lib/types";
-
-const LIMIT = 20;
-const { data } = await supabase
-  .from("posts")
-  .select("*, categories(name, slug, emoji)")
-  .order("created_at", { ascending: false })
-  .range(0, LIMIT - 1);
-const posts = (data as Post[]) ?? [];
+import FeedSection from "../components/FeedSection.astro";
 ---
 
 <Layout title="HAHA! — Kumpulan Meme Lucu">
-  <CategoryTabs />
-
-  {posts.length > 0 ? (
-    <>
-      <div id="masonry">
-        <MasonryGrid posts={posts} />
-      </div>
-      <LoadMore offset={posts.length} limit={LIMIT} />
-    </>
-  ) : (
-    <div class="flex flex-col items-center gap-4 py-24 text-center">
-      <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
-        <Icon name="lucide:image-off" class="size-8 text-ink-soft" />
-      </span>
-      <p class="text-[16px] font-bold text-ink">Belum ada meme nih!</p>
-      <p class="text-[12px] text-ink-soft">Jadi orang pertama yang upload meme lucu.</p>
-    </div>
-  )}
+  <FeedSection
+    url="/api/posts"
+    emptyTitle="Belum ada meme nih!"
+    emptySub="Jadi orang pertama yang upload meme lucu."
+  />
 </Layout>

@@ -1,122 +1,52 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import LikeButton from "../../components/LikeButton.astro";
-import BookmarkButton from "../../components/BookmarkButton.astro";
-import CommentSection from "../../components/CommentSection.astro";
-import PostCard from "../../components/PostCard.astro";
 import { Icon } from "astro-icon/components";
 import { serviceClient } from "../../lib/auth";
-import type { Comment, Post } from "../../lib/types";
 
 const { id } = Astro.params;
-
-const db = serviceClient();
-const { data } = await db
+const { data: metaPost } = await serviceClient()
   .from("posts")
-  .select("*, categories(name, slug, emoji)")
+  .select("title, description, image_url")
   .eq("id", id)
-  .single();
-const post = (data as Post) ?? null;
-
-let comments: Comment[] = [];
-let related: Post[] = [];
-if (post) {
-  const [c, r] = await Promise.all([
-    db.from("comments").select("*, users!comments_user_id_fkey(avatar_url, is_verified)").eq("post_id", post.id).order("created_at", { ascending: false }).limit(50),
-    db
-      .from("posts")
-      .select("*, categories(name, slug, emoji)")
-      .neq("id", post.id)
-      .order("created_at", { ascending: false })
-      .limit(4),
-  ]);
-  comments = (c.data as Comment[]) ?? [];
-  related = (r.data as Post[]) ?? [];
-}
-const sessionUser = Astro.locals.user;
+  .maybeSingle();
 ---
 
 <Layout
-  title={post ? `${post.title ?? "Meme" } — HAHA!` : "Meme tidak ditemukan"}
-  description={post?.description ?? undefined}
-  image={post?.image_url ?? undefined}
+  title={metaPost?.title ? `${metaPost.title} — HAHA!` : "Meme — HAHA!"}
+  description={metaPost?.description ?? undefined}
+  image={metaPost?.image_url ?? undefined}
 >
-  {post ? (
-    <>
-      <div class="mx-auto max-w-3xl">
-        <a
-          href="/"
-          class="mb-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-ink-soft transition-colors hover:text-brand"
-        >
-          <Icon name="lucide:arrow-left" class="size-4" />
-          Kembali
-        </a>
+  <div class="mx-auto max-w-3xl">
+    <a
+      href="/"
+      class="mb-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-ink-soft transition-colors hover:text-brand"
+    >
+      <Icon name="lucide:arrow-left" class="size-4" />
+      Kembali
+    </a>
 
-        <div class="overflow-hidden rounded-md bg-white shadow-floating">
-          <div class="flex items-center justify-center bg-ink-mute">
-            <img
-              src={post.image_url}
-              alt={post.title ?? "Meme"}
-              class="aspect-[4/3] w-full object-contain sm:aspect-auto sm:max-h-[70vh]"
-            />
-          </div>
-          <div class="p-6 sm:p-8">
-            <div class="mb-4 flex flex-wrap items-center gap-2">
-              {post.categories && (
-                <a
-                  href={`/category/${post.categories.slug}`}
-                  class="flex items-center gap-1.5 rounded-md bg-offwhite px-4 py-2 text-[12px] font-bold text-ink transition-colors hover:bg-neutral"
-                >
-                  {post.categories.emoji} {post.categories.name}
-                </a>
-              )}
-              <span class="ml-auto flex items-center gap-1.5 text-[12px] text-ink-soft">
-                <Icon name="lucide:calendar" class="size-4" />
-                {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-              </span>
-            </div>
-
-            <h1 class="mb-2 font-display text-[26px] font-semibold leading-tight text-ink">{post.title ?? "Meme lucu"}</h1>
-            {post.description && <p class="mb-4 whitespace-pre-line text-[14px] leading-relaxed text-ink">{post.description}</p>}
-
-            {post.tags && post.tags.length > 0 && (
-              <div class="mt-4 flex flex-wrap gap-2">
-                {post.tags.map((t) => (
-                  <a
-                    href={`/tag/${encodeURIComponent(t)}`}
-                    class="rounded-md bg-brand-soft px-3 py-2 text-[12px] font-bold text-brand transition-colors hover:bg-brand/20"
-                  >
-                    #{t}
-                  </a>
-                ))}
-              </div>
-            )}
-
-            <div class="mt-6 flex items-center justify-center gap-3 border-t border-neutral pt-6">
-              <LikeButton postId={post.id} likeCount={post.like_count} showLabel />
-              <BookmarkButton postId={post.id} />
-            </div>
-          </div>
+    <div id="post-root" data-post-id={id}>
+      <div id="post-skeleton" aria-hidden="true">
+        <div class="skeleton aspect-[4/3] w-full rounded-md"></div>
+        <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <div class="skeleton h-20 rounded-md"></div>
+          <div class="skeleton hidden h-12 w-36 rounded-md sm:block"></div>
         </div>
-
-        <div class="mt-6">
-          <CommentSection postId={post.id} comments={comments} user={sessionUser} />
+        <div class="mt-4 space-y-3">
+          <div class="skeleton h-6 w-40 rounded-md"></div>
+          <div class="skeleton h-9 w-full max-w-lg rounded-md"></div>
+          <div class="skeleton h-4 w-3/4 rounded-md"></div>
+          <div class="skeleton h-14 w-full rounded-md"></div>
         </div>
-
-        {related.length > 0 && (
-          <section class="mt-12">
-            <h2 class="mb-6 font-display text-[20px] font-semibold text-ink">Meme lainnya</h2>
-            <div class="columns-1 gap-4 sm:columns-2">
-              {related.map((p) => (
-                <PostCard post={p} />
-              ))}
-            </div>
-          </section>
-        )}
+        <div class="mt-6 space-y-3">
+          <div class="skeleton h-6 w-32 rounded-md"></div>
+          <div class="skeleton h-24 rounded-md"></div>
+          <div class="skeleton h-24 rounded-md"></div>
+        </div>
       </div>
-    </>
-  ) : (
-    <div class="flex flex-col items-center gap-4 py-24 text-center">
+    </div>
+
+    <div id="post-notfound" class="hidden flex-col items-center gap-4 py-24 text-center">
       <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
         <Icon name="lucide:image-off" class="size-8 text-ink-soft" />
       </span>
@@ -124,5 +54,11 @@ const sessionUser = Astro.locals.user;
       <p class="text-[12px] text-ink-soft">Mungkin sudah dihapus atau URL-nya salah.</p>
       <a href="/" class="text-[12px] font-bold text-brand hover:underline">Kembali ke beranda</a>
     </div>
-  )}
+  </div>
 </Layout>
+
+<script>
+  import { initPost } from "../../scripts/initPost";
+  const root = document.getElementById("post-root") as HTMLElement | null;
+  if (root?.dataset.postId) initPost(root.dataset.postId);
+</script>

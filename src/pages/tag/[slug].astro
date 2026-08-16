@@ -1,22 +1,9 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import MasonryGrid from "../../components/MasonryGrid.astro";
-import LoadMore from "../../components/LoadMore.astro";
-import { Icon } from "astro-icon/components";
-import { supabase } from "../../lib/supabase";
-import type { Post } from "../../lib/types";
+import FeedSection from "../../components/FeedSection.astro";
 
 const { slug } = Astro.params;
 const tag = decodeURIComponent(slug ?? "");
-const LIMIT = 20;
-
-const { data } = await supabase
-  .from("posts")
-  .select("*, categories(name, slug, emoji)")
-  .contains("tags", [tag])
-  .order("created_at", { ascending: false })
-  .range(0, LIMIT - 1);
-const posts = (data as Post[]) ?? [];
 ---
 
 <Layout title={`#${tag} — HAHA!`} description={`Meme bertag ${tag}`}>
@@ -25,23 +12,13 @@ const posts = (data as Post[]) ?? [];
       #{tag}
     </div>
     <h1 class="font-display text-[30px] font-semibold text-ink">Meme tag #{tag}</h1>
-    <p class="text-[12px] text-ink-soft">{posts.length} meme ditemukan</p>
+    <p class="text-[12px] text-ink-soft"><span id="tag-count">…</span> meme ditemukan</p>
   </section>
-
-  {posts.length > 0 ? (
-    <>
-      <div id="masonry">
-        <MasonryGrid posts={posts} />
-      </div>
-      <LoadMore offset={posts.length} limit={LIMIT} tag={tag} />
-    </>
-  ) : (
-    <div class="flex flex-col items-center gap-4 py-24 text-center">
-      <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
-        <Icon name="lucide:tag" class="size-8 text-ink-soft" />
-      </span>
-      <p class="text-[16px] font-bold text-ink">Tidak ada meme dengan tag #{tag}</p>
-      <p class="text-[12px] text-ink-soft">Coba tag lain, atau upload meme dengan tag ini.</p>
-    </div>
-  )}
+  <FeedSection
+    url={`/api/posts?tag=${encodeURIComponent(tag)}`}
+    countEl="#tag-count"
+    emptyTitle={`Tidak ada meme dengan tag #${tag}`}
+    emptySub="Coba tag lain, atau upload meme dengan tag ini."
+    emptyIcon="lucide:tag"
+  />
 </Layout>

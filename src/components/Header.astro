@@ -1,19 +1,13 @@
 ---
 import { Icon } from "astro-icon/components";
 import VerifiedBadge from "./VerifiedBadge.astro";
-import type { Category } from "../lib/types";
 import type { AuthUser } from "../lib/auth";
 
 interface Props {
-  categories: Category[];
   user: AuthUser | null;
 }
 
-const { categories, user } = Astro.props;
-const pathname = Astro.url.pathname;
-const isHome = pathname === "/";
-const isBookmarks = pathname === "/bookmarks";
-const isActiveCategory = (slug: string) => pathname === `/category/${slug}`;
+const { user } = Astro.props;
 ---
 
 <header class="sticky top-0 z-[999] bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
@@ -49,7 +43,7 @@ const isActiveCategory = (slug: string) => pathname === `/category/${slug}`;
           )}
         </span>
         <span class="flex shrink-0 items-center gap-1 text-[13px] font-bold text-ink">
-          <span class="hidden sm:inline">{user.display_name}</span>
+          <span class="max-w-[64px] truncate sm:max-w-none">{user.display_name}</span>
           {user.is_verified && <VerifiedBadge class="size-3.5" />}
         </span>
       </a>
@@ -62,108 +56,5 @@ const isActiveCategory = (slug: string) => pathname === `/category/${slug}`;
         Masuk
       </a>
     )}
-
-    <button
-      id="menu-toggle"
-      class="flex size-12 shrink-0 items-center justify-center rounded-md text-ink transition-colors hover:bg-neutral lg:hidden"
-      aria-label="Buka menu kategori"
-      aria-expanded="false"
-      aria-controls="mobile-nav"
-    >
-      <Icon id="menu-icon-open" name="lucide:menu" class="size-5" />
-      <Icon id="menu-icon-close" name="lucide:x" class="hidden size-5" />
-    </button>
   </div>
-
-  <nav
-    id="mobile-nav"
-    class="hidden border-t border-neutral bg-white px-4 pb-4 pt-2 lg:hidden"
-    aria-label="Menu kategori"
-  >
-    <div class="flex flex-wrap gap-2">
-      <a
-        href="/"
-        class:list={[
-          "flex h-11 items-center rounded-md px-4 text-[13px] font-bold transition-colors",
-          isHome ? "bg-brand text-white" : "text-ink hover:bg-neutral",
-        ]}
-      >
-        Semua
-      </a>
-      {categories.map((c) => (
-        <a
-          href={`/category/${c.slug}`}
-          class:list={[
-            "flex h-11 items-center gap-1.5 rounded-md px-4 text-[13px] font-bold transition-colors",
-            isActiveCategory(c.slug)
-              ? "bg-brand text-white"
-              : "text-ink hover:bg-neutral",
-          ]}
-        >
-          {c.emoji} {c.name}
-        </a>
-      ))}
-    </div>
-    <div class="mt-3 flex flex-col gap-2 border-t border-neutral pt-3">
-      <a
-        href="/bookmarks"
-        class:list={[
-          "flex h-11 items-center gap-2 rounded-md text-[13px] font-bold transition-colors",
-          isBookmarks ? "text-brand" : "text-ink hover:bg-neutral",
-        ]}
-      >
-        <Icon name="lucide:bookmark" class="size-4 text-brand" />
-        Meme Tersimpan
-      </a>
-      {user ? (
-        <button
-          class="upload-trigger flex h-11 items-center justify-center gap-2 rounded-md bg-brand font-display text-[14px] font-medium text-white transition-all duration-200 hover:bg-brand-hover"
-        >
-          <Icon name="lucide:upload" class="size-4" />
-          Upload Meme
-        </button>
-      ) : (
-        <a
-          href="/login"
-          class="flex h-11 items-center justify-center gap-2 rounded-md bg-brand font-display text-[14px] font-medium text-white transition-all duration-200 hover:bg-brand-hover"
-        >
-          <Icon name="lucide:log-in" class="size-4" />
-          Masuk
-        </a>
-      )}
-    </div>
-  </nav>
 </header>
-
-<script>
-  const toggle = document.getElementById("menu-toggle") as HTMLButtonElement;
-  const panel = document.getElementById("mobile-nav") as HTMLElement;
-  const iconOpen = document.getElementById("menu-icon-open") as HTMLElement;
-  const iconClose = document.getElementById("menu-icon-close") as HTMLElement;
-
-  function open(force: boolean) {
-    panel.classList.toggle("hidden", !force);
-    iconOpen.classList.toggle("hidden", force);
-    iconClose.classList.toggle("hidden", !force);
-    toggle.setAttribute("aria-expanded", String(force));
-  }
-
-  toggle?.addEventListener("click", () => open(panel.classList.contains("hidden")));
-  panel?.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => open(false)));
-  panel?.querySelectorAll(".upload-trigger").forEach((b) => b.addEventListener("click", () => open(false)));
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") open(false);
-  });
-  window.addEventListener("click", (e) => {
-    if (!headerContains(e.target as Node)) open(false);
-  });
-
-  function headerContains(node: Node): boolean {
-    let el: Node | null = node;
-    while (el) {
-      if (el === toggle || el === panel) return true;
-      el = el.parentNode;
-    }
-    return false;
-  }
-</script>

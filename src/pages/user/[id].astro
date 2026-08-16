@@ -1,28 +1,27 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import PostCard from "../../components/PostCard.astro";
+import FeedSection from "../../components/FeedSection.astro";
 import VerifiedBadge from "../../components/VerifiedBadge.astro";
 import { Icon } from "astro-icon/components";
 import { getUserById, serviceClient } from "../../lib/auth";
-import type { Post } from "../../lib/types";
 
 const { id } = Astro.params;
 const user = await getUserById(id ?? "");
 const viewer = Astro.locals.user;
 
-let posts: Post[] = [];
+let memeCount = 0;
 let followers = 0;
 let following = 0;
 let isFollowing = false;
 
 if (user) {
   const db = serviceClient();
-  const [postsRes, followersRes, followingRes] = await Promise.all([
-    db.from("posts").select("*, categories(name, slug, emoji)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(24),
+  const [memeRes, followersRes, followingRes] = await Promise.all([
+    db.from("posts").select("post_id", { count: "exact", head: true }).eq("user_id", user.id),
     db.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", user.id),
     db.from("follows").select("following_id", { count: "exact", head: true }).eq("follower_id", user.id),
   ]);
-  posts = (postsRes.data as Post[]) ?? [];
+  memeCount = memeRes.count ?? 0;
   followers = followersRes.count ?? 0;
   following = followingRes.count ?? 0;
 
@@ -104,7 +103,7 @@ const isOwn = viewer?.id === user?.id;
           {user.bio && <p class="mt-4 whitespace-pre-line text-[14px] text-ink">{user.bio}</p>}
 
           <div class="mt-5 flex gap-6 text-[13px]">
-            <span class="text-ink"><b class="font-bold text-ink">{posts.length}</b> <span class="text-ink-soft">meme</span></span>
+            <span class="text-ink"><b class="font-bold text-ink">{memeCount}</b> <span class="text-ink-soft">meme</span></span>
             <a href={`/user/${user.id}/followers`} class="text-ink transition-colors hover:text-brand"><b class="font-bold text-ink">{followers}</b> <span class="text-ink-soft">pengikut</span></a>
             <a href={`/user/${user.id}/following`} class="text-ink transition-colors hover:text-brand"><b class="font-bold text-ink">{following}</b> <span class="text-ink-soft">mengikuti</span></a>
           </div>
@@ -123,16 +122,11 @@ const isOwn = viewer?.id === user?.id;
 
       <section class="mt-8">
         <h2 class="mb-4 font-display text-[18px] font-semibold text-ink">Meme {user.display_name}</h2>
-        {posts.length > 0 ? (
-          <div class="columns-2 gap-3 sm:gap-4 lg:columns-3 xl:columns-4">
-            {posts.map((p) => <PostCard post={p} />)}
-          </div>
-        ) : (
-          <div class="flex flex-col items-center gap-3 rounded-md bg-white py-16 text-center shadow-raised">
-            <Icon name="lucide:image-off" class="size-8 text-ink-soft" />
-            <p class="text-[14px] font-bold text-ink">{isOwn ? "Kamu belum upload meme" : "Belum ada meme nih"}</p>
-          </div>
-        )}
+        <FeedSection
+          url={`/api/posts?user_id=${user.id}`}
+          limit={24}
+          emptyTitle={isOwn ? "Kamu belum upload meme" : "Belum ada meme nih"}
+        />
       </section>
     </>
   ) : (
