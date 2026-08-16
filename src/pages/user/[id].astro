@@ -19,8 +19,8 @@ if (user) {
   const db = serviceClient();
   const [postsRes, followersRes, followingRes] = await Promise.all([
     db.from("posts").select("*, categories(name, slug, emoji)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(24),
-    db.from("follows").select("id", { count: "exact", head: true }).eq("following_id", user.id),
-    db.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", user.id),
+    db.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", user.id),
+    db.from("follows").select("following_id", { count: "exact", head: true }).eq("follower_id", user.id),
   ]);
   posts = (postsRes.data as Post[]) ?? [];
   followers = followersRes.count ?? 0;
