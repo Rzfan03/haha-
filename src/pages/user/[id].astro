@@ -40,7 +40,10 @@ if (user) {
 const isOwn = viewer?.id === user?.id;
 ---
 
-<Layout title={user ? `${user.display_name} — HAHA!` : "Profil tidak ditemukan"}>
+<Layout
+  title={user ? `${user.display_name} — HAHA!` : "Profil tidak ditemukan"}
+  image={user?.banner_url ?? user?.avatar_url ?? undefined}
+>
   {user ? (
     <>
       <div class="isolate overflow-hidden rounded-md bg-white shadow-raised">

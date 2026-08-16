@@ -10,9 +10,14 @@ import type { Category } from "../lib/types";
 interface Props {
   title?: string;
   description?: string;
+  image?: string;
 }
 
-const { title = "HAHA!", description = "Kumpulan meme lucu — upload, like, dan simpan meme favoritmu" } = Astro.props;
+const {
+  title = "HAHA!",
+  description = "Kumpulan meme lucu — upload, like, dan simpan meme favoritmu",
+  image,
+} = Astro.props;
 
 const categories: Category[] = await getCategories();
 const user = Astro.locals.user;
@@ -28,6 +33,14 @@ const user = Astro.locals.user;
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    {image && (
+      <>
+        <meta property="og:image" content={image} />
+        <meta property="og:image:alt" content={title} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content={image} />
+      </>
+    )}
     <link rel="icon" type="image/png" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

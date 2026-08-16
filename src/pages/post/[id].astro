@@ -39,6 +39,7 @@ const sessionUser = Astro.locals.user;
 <Layout
   title={post ? `${post.title ?? "Meme" } — HAHA!` : "Meme tidak ditemukan"}
   description={post?.description ?? undefined}
+  image={post?.image_url ?? undefined}
 >
   {post ? (
     <>
