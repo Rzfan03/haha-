@@ -3,8 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import PostCard from "../../components/PostCard.astro";
 import VerifiedBadge from "../../components/VerifiedBadge.astro";
 import { Icon } from "astro-icon/components";
-import { supabase } from "../../lib/supabase";
-import { getUserById } from "../../lib/auth";
+import { getUserById, serviceClient } from "../../lib/auth";
 import type { Post } from "../../lib/types";
 
 const { id } = Astro.params;
@@ -17,7 +16,7 @@ let following = 0;
 let isFollowing = false;
 
 if (user) {
-  const db = supabase;
+  const db = serviceClient();
   const [postsRes, followersRes, followingRes] = await Promise.all([
     db.from("posts").select("*, categories(name, slug, emoji)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(24),
     db.from("follows").select("id", { count: "exact", head: true }).eq("following_id", user.id),
@@ -28,7 +27,7 @@ if (user) {
   following = followingRes.count ?? 0;
 
   if (viewer && viewer.id !== user.id) {
-    const { data: rel } = await supabase
+    const { data: rel } = await db
       .from("follows")
       .select("follower_id")
       .eq("follower_id", viewer.id)
