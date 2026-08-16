@@ -1,0 +1,102 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  offset?: number;
+  limit?: number;
+  categorySlug?: string;
+  tag?: string;
+  query?: string;
+  bookmarks?: boolean;
+}
+
+const { offset = 0, limit = 20, categorySlug = "", tag = "", query = "", bookmarks = false } = Astro.props;
+
+const data = JSON.stringify({ offset, limit, categorySlug, tag, query, bookmarks });
+---
+
+<div
+  id="load-more-wrap"
+  class="mt-10 flex flex-col items-center gap-4"
+  data-params={data}
+>
+  <div id="load-more-skeleton" class="grid w-full grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 hidden">
+    {Array.from({ length: 4 }).map(() => (
+      <div class="space-y-2">
+        <div class="skeleton aspect-square rounded-md"></div>
+        <div class="skeleton h-10 rounded-md"></div>
+      </div>
+    ))}
+  </div>
+  <button
+    id="load-more-btn"
+    class="flex h-12 items-center gap-2 rounded-md bg-white px-8 font-display text-[14px] font-medium text-ink shadow-raised transition-all duration-200 hover:bg-neutral hover:shadow-floating active:scale-95"
+  >
+    <Icon id="load-more-spinner" name="lucide:loader-2" class="size-4 hidden animate-spin" />
+    <span>Muat lebih banyak</span>
+  </button>
+</div>
+
+<script>
+  import { revealCard } from "../scripts/postCardHTML";
+  import { bindCardActions } from "../scripts/cardActions";
+
+  const wrap = document.getElementById("load-more-wrap") as HTMLElement;
+  const btn = document.getElementById("load-more-btn") as HTMLButtonElement | null;
+  const spinner = document.getElementById("load-more-spinner") as HTMLElement | null;
+  const skeleton = document.getElementById("load-more-skeleton") as HTMLElement | null;
+  const grid = document.querySelector("#masonry") as HTMLElement | null;
+
+  if (!btn || !grid) {
+    wrap?.remove();
+  }
+
+  let params: { offset: number; limit: number; categorySlug?: string; tag?: string; query?: string; bookmarks?: boolean };
+  try {
+    params = JSON.parse(wrap?.dataset.params || "{}");
+  } catch {
+    params = { offset: 0, limit: 20 };
+  }
+
+  async function loadMore() {
+    btn!.disabled = true;
+    spinner!.classList.remove("hidden");
+    skeleton!.classList.remove("hidden");
+    const sp = new URLSearchParams({ offset: String(params.offset), limit: String(params.limit) });
+    if (params.categorySlug) sp.set("category", params.categorySlug);
+    if (params.tag) sp.set("tag", params.tag);
+    if (params.query) sp.set("q", params.query);
+    if (params.bookmarks) sp.set("bookmarks", "true");
+
+    try {
+      const res = await fetch(`/api/posts?${sp}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      if (data.posts.length === 0) {
+        wrap?.remove();
+        return;
+      }
+      data.posts.forEach((post: any, i: number) => {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = revealCard(post, i);
+        const card = tmp.firstElementChild as HTMLElement;
+        grid!.appendChild(card);
+        requestAnimationFrame(() => card.classList.add("is-visible"));
+      });
+      bindCardActions(grid!);
+      params.offset += data.posts.length;
+    } catch {
+      const toastEl = document.createElement("div");
+      toastEl.className = "text-[12px] text-error";
+      toastEl.textContent = "Gagal memuat. Coba lagi.";
+      wrap?.prepend(toastEl);
+      setTimeout(() => toastEl.remove(), 2500);
+    } finally {
+      btn!.disabled = false;
+      spinner!.classList.add("hidden");
+      skeleton!.classList.add("hidden");
+    }
+  }
+
+  btn?.addEventListener("click", loadMore);
+</script>

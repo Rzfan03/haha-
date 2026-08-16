@@ -1,0 +1,311 @@
+---
+import { Icon } from "astro-icon/components";
+import type { Category } from "../lib/types";
+
+interface Props {
+  categories: Category[];
+}
+
+const { categories } = Astro.props;
+const MAX_MB = 5;
+---
+
+<div id="upload-modal" class="fixed inset-0 z-modal hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Upload meme">
+  <div id="upload-backdrop" class="absolute inset-0 bg-ink/50 backdrop-blur-sm"></div>
+  <div class="relative z-10 flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-md bg-white shadow-modal animate-scale-in">
+    <div class="flex items-start justify-between border-b border-neutral px-6 py-5 sm:px-8">
+      <div>
+        <h2 class="font-display text-[22px] font-semibold text-ink">Upload Meme</h2>
+        <p class="mt-0.5 text-[12px] text-ink-soft">Meme kamu bakal tampil di beranda setelah diunggah</p>
+      </div>
+      <button id="upload-close" class="flex size-10 shrink-0 items-center justify-center rounded-lg text-ink transition-colors hover:bg-offwhite" aria-label="Tutup">
+        <Icon name="lucide:x" class="size-5" />
+      </button>
+    </div>
+
+    <form id="upload-form" class="flex flex-1 flex-col overflow-y-auto px-6 py-6 sm:px-8">
+      <div class="grid gap-6 sm:grid-cols-2">
+        <div>
+          <span class="mb-2 block text-[13px] font-bold text-ink">Foto</span>
+          <label
+            id="dropzone"
+            class="group flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-neutral bg-offwhite p-4 text-center transition-all duration-200 hover:border-brand hover:bg-brand-soft"
+          >
+            <span id="dz-icon" class="flex size-12 items-center justify-center rounded-md bg-white text-brand shadow-raised transition-transform duration-200 group-hover:scale-110">
+              <Icon name="lucide:image-plus" class="size-6" />
+            </span>
+            <span class="text-[13px] font-bold text-ink">Tarik foto ke sini</span>
+            <span class="text-[12px] text-ink-soft">atau klik untuk pilih file</span>
+            <input id="file-input" type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" />
+          </label>
+
+          <div id="file-info" class="hidden">
+            <div class="relative overflow-hidden rounded-md bg-offwhite">
+              <img id="preview" class="max-h-56 w-full object-contain" alt="Preview" />
+              <span id="file-badge" class="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-ink/80 px-3 py-1 text-[11px] text-white backdrop-blur"></span>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-2">
+              <button id="file-change" type="button" class="flex h-10 items-center gap-1.5 rounded-md bg-white px-4 text-[12px] font-bold text-ink shadow-raised transition-colors hover:bg-neutral">
+                <Icon name="lucide:refresh-cw" class="size-3.5" />
+                Ganti
+              </button>
+              <button id="file-remove" type="button" class="flex h-10 items-center gap-1.5 rounded-md px-4 text-[12px] text-ink-soft transition-colors hover:bg-[rgba(33,25,34,0.08)]">
+                <Icon name="lucide:trash-2" class="size-3.5" />
+                Hapus
+              </button>
+            </div>
+          </div>
+
+          <p id="file-error" role="alert" class="mt-2 hidden items-center gap-1.5 rounded-md bg-error/10 px-3 py-2.5 text-[12px] text-error">
+            <Icon name="lucide:alert-circle" class="size-4 shrink-0" />
+            <span></span>
+          </p>
+          <p class="mt-3 text-[11px] text-ink-soft">Format JPG, PNG, GIF, WebP · maksimal {MAX_MB}MB</p>
+        </div>
+
+        <div class="space-y-4">
+          <label class="block">
+            <span class="mb-1.5 block text-[13px] font-bold text-ink">Judul</span>
+            <input
+              id="upload-title"
+              name="title"
+              type="text"
+              maxlength="100"
+              placeholder="Ketika gajian tapi langsung habis 💸"
+              class="w-full rounded-md border border-[#919190] bg-white px-3.5 py-3 text-[14px] text-ink outline-none transition-all placeholder:text-ink-soft focus:border-ink focus:ring-2 focus:ring-brand"
+            />
+          </label>
+
+          <label class="block">
+            <span class="mb-1.5 block text-[13px] font-bold text-ink">Kategori</span>
+            <div class="relative">
+              <select
+                name="category_id"
+                required
+                class="w-full appearance-none rounded-md border border-[#919190] bg-white px-3.5 py-3 text-[14px] text-ink outline-none transition-all focus:border-ink focus:ring-2 focus:ring-brand"
+              >
+                <option value="" disabled selected>Pilih kategori...</option>
+                {categories.map((c) => (
+                  <option value={c.id}>{c.emoji} {c.name}</option>
+                ))}
+              </select>
+              <Icon name="lucide:chevron-down" class="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-soft" />
+            </div>
+          </label>
+
+          <label class="block">
+            <div class="mb-1.5 flex items-center justify-between">
+              <span class="text-[13px] font-bold text-ink">Deskripsi <span class="font-normal text-ink-soft">(opsional)</span></span>
+              <span id="desc-counter" class="text-[11px] text-ink-soft">0/500</span>
+            </div>
+            <textarea
+              name="description"
+              rows="4"
+              maxlength="500"
+              placeholder="Ceritain dong kenapa meme ini lucu..."
+              class="w-full resize-none rounded-md border border-[#919190] bg-white px-3.5 py-3 text-[14px] text-ink outline-none transition-all placeholder:text-ink-soft focus:border-ink focus:ring-2 focus:ring-brand"
+            ></textarea>
+          </label>
+
+          <label class="block">
+            <span class="mb-1.5 block text-[13px] font-bold text-ink">Tag <span class="font-normal text-ink-soft">(opsional)</span></span>
+            <input
+              name="tags"
+              type="text"
+              maxlength="100"
+              placeholder="ngakak, relatable, kerja"
+              class="w-full rounded-md border border-[#919190] bg-white px-3.5 py-3 text-[14px] text-ink outline-none transition-all placeholder:text-ink-soft focus:border-ink focus:ring-2 focus:ring-brand"
+            />
+            <p class="mt-1.5 text-[11px] text-ink-soft">Pisahkan dengan koma, maksimal 8 tag</p>
+          </label>
+        </div>
+      </div>
+    </form>
+
+    <div class="flex items-center justify-end gap-3 border-t border-neutral bg-white px-6 py-4 sm:px-8">
+      <button
+        id="upload-cancel"
+        type="button"
+        class="flex h-12 items-center rounded-md px-6 text-[14px] text-ink transition-colors hover:bg-[rgba(33,25,34,0.08)]"
+      >
+        Batal
+      </button>
+      <button
+        id="upload-submit"
+        type="submit"
+        form="upload-form"
+        class="flex h-12 min-w-40 items-center justify-center gap-2 rounded-md bg-brand px-6 font-display text-[14px] font-medium text-white transition-all duration-200 hover:brightness-110 active:scale-[0.98] active:brightness-95 disabled:cursor-not-allowed disabled:bg-neutral disabled:text-ink-soft"
+        disabled
+      >
+        <Icon id="submit-spinner" name="lucide:loader-2" class="hidden size-4 animate-spin" />
+        <Icon id="submit-icon" name="lucide:upload" class="size-4" />
+        <span id="submit-label">Upload</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const MAX_BYTES = 5 * 1024 * 1024;
+
+  const modal = document.getElementById("upload-modal") as HTMLElement;
+  const backdrop = document.getElementById("upload-backdrop") as HTMLElement;
+  const form = document.getElementById("upload-form") as HTMLFormElement;
+  const fileInput = document.getElementById("file-input") as HTMLInputElement;
+  const dropzone = document.getElementById("dropzone") as HTMLLabelElement;
+  const dzIcon = document.getElementById("dz-icon") as HTMLElement;
+  const preview = document.getElementById("preview") as HTMLImageElement;
+  const fileInfo = document.getElementById("file-info") as HTMLElement;
+  const fileBadge = document.getElementById("file-badge") as HTMLElement;
+  const fileError = document.getElementById("file-error") as HTMLElement;
+  const errorText = fileError.querySelector("span") as HTMLElement;
+  const submitBtn = document.getElementById("upload-submit") as HTMLButtonElement;
+  const submitLabel = document.getElementById("submit-label") as HTMLElement;
+  const submitIcon = document.getElementById("submit-icon") as HTMLElement;
+  const submitSpinner = document.getElementById("submit-spinner") as HTMLElement;
+  const descTextarea = form.querySelector<HTMLTextAreaElement>("textarea[name=description]");
+  const descCounter = document.getElementById("desc-counter") as HTMLElement;
+  const categorySelect = form.querySelector<HTMLSelectElement>("select[name=category_id]");
+  const titleInput = document.getElementById("upload-title") as HTMLInputElement;
+
+  let selectedFile: File | null = null;
+  let lastTrigger: HTMLElement | null = null;
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function openModal() {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => titleInput?.focus());
+  }
+  function closeModal() {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    document.body.style.overflow = "";
+    lastTrigger?.focus();
+  }
+  function resetForm() {
+    form.reset();
+    selectedFile = null;
+    dropzone.classList.remove("hidden");
+    dzIcon.classList.remove("hidden");
+    fileInfo.classList.add("hidden");
+    preview.src = "";
+    fileError.classList.add("hidden");
+    updateSubmitState();
+  }
+  function showError(msg: string) {
+    errorText.textContent = msg;
+    fileError.classList.remove("hidden");
+  }
+  function hideError() {
+    fileError.classList.add("hidden");
+  }
+  function updateSubmitState() {
+    submitBtn.disabled = !selectedFile || !categorySelect?.value;
+  }
+
+  function handleFile(file: File) {
+    hideError();
+    const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      showError("Format harus JPG, PNG, GIF, atau WebP.");
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      showError(`Ukuran file melebihi 5MB (${formatBytes(file.size)}). Pilih file yang lebih kecil.`);
+      return;
+    }
+    selectedFile = file;
+    preview.src = URL.createObjectURL(file);
+    fileBadge.textContent = `${file.name} · ${formatBytes(file.size)}`;
+    dropzone.classList.add("hidden");
+    fileInfo.classList.remove("hidden");
+    updateSubmitState();
+  }
+
+  document.querySelectorAll<HTMLElement>(".upload-trigger, #upload-trigger").forEach((el) => {
+    el.addEventListener("click", () => {
+      lastTrigger = el;
+      openModal();
+    });
+  });
+  document.getElementById("upload-close")?.addEventListener("click", closeModal);
+  document.getElementById("upload-cancel")?.addEventListener("click", () => {
+    resetForm();
+    closeModal();
+  });
+  backdrop?.addEventListener("click", closeModal);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeModal();
+  });
+
+  dropzone?.addEventListener("click", () => fileInput.click());
+  dropzone?.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropzone.classList.add("border-brand", "bg-brand-soft");
+  });
+  dropzone?.addEventListener("dragleave", () => {
+    dropzone.classList.remove("border-brand", "bg-brand-soft");
+  });
+  dropzone?.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("border-brand", "bg-brand-soft");
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleFile(file);
+  });
+  fileInput?.addEventListener("change", () => {
+    const file = fileInput.files?.[0];
+    if (file) handleFile(file);
+    fileInput.value = "";
+  });
+  document.getElementById("file-change")?.addEventListener("click", () => fileInput.click());
+  document.getElementById("file-remove")?.addEventListener("click", resetForm);
+
+  descTextarea?.addEventListener("input", () => {
+    descCounter.textContent = `${descTextarea.value.length}/500`;
+  });
+  categorySelect?.addEventListener("change", updateSubmitState);
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      showError("Pilih foto dulu ya!");
+      return;
+    }
+
+    const fd = new FormData(form);
+    fd.set("file", selectedFile);
+
+    submitBtn.disabled = true;
+    submitLabel.textContent = "Mengupload...";
+    submitIcon.classList.add("hidden");
+    submitSpinner.classList.remove("hidden");
+
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (res.status === 401) {
+        closeModal();
+        window.location.href = `/login?next=${encodeURIComponent("/")}`;
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || "Gagal upload");
+      closeModal();
+      resetForm();
+      window.dispatchEvent(new CustomEvent("haha:toast", { detail: { message: "Meme berhasil diupload! 🎉" } }));
+    } catch (err) {
+      showError((err as Error).message);
+    } finally {
+      submitLabel.textContent = "Upload";
+      submitIcon.classList.remove("hidden");
+      submitSpinner.classList.add("hidden");
+      updateSubmitState();
+    }
+  });
+</script>

@@ -1,0 +1,34 @@
+---
+import PostCard from "./PostCard.astro";
+import type { Post } from "../lib/types";
+
+interface Props {
+  posts: Post[];
+  base?: number;
+}
+
+const { posts, base = 0 } = Astro.props;
+---
+
+<div class="columns-2 gap-3 sm:gap-4 lg:columns-3 xl:columns-4">
+  {posts.map((post, i) => (
+    <div class="reveal" style={{ transitionDelay: `${Math.min((base + i) % 12, 10) * 40}ms` }}>
+      <PostCard post={post} />
+    </div>
+  ))}
+</div>
+
+<script>
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.05 }
+  );
+  document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+</script>

@@ -1,0 +1,87 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Icon } from "astro-icon/components";
+---
+
+<Layout title="Tersimpan — HAHA!" description="Meme yang kamu simpan">
+  <section class="mb-8">
+    <h1 class="flex items-center gap-2 text-[24px] font-bold text-ink">
+      <Icon name="lucide:bookmark" class="size-6 text-brand" />
+      Meme Tersimpan
+    </h1>
+    <p class="mt-1 text-[12px] text-ink-soft">Semua meme yang kamu bookmark di perangkat ini.</p>
+  </section>
+
+  <div id="bookmarks-loading" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    {Array.from({ length: 4 }).map(() => (
+      <div class="space-y-2">
+        <div class="skeleton aspect-square rounded-md"></div>
+        <div class="skeleton h-10 rounded-md"></div>
+      </div>
+    ))}
+  </div>
+  <div id="masonry" class="columns-2 gap-3 sm:gap-4 lg:columns-3 xl:columns-4"></div>
+  <div id="bookmarks-empty" class="hidden flex-col items-center gap-4 py-24 text-center">
+    <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
+      <Icon name="lucide:bookmark" class="size-8 text-ink-soft" />
+    </span>
+    <p class="text-[16px] font-bold text-ink">Belum ada meme tersimpan</p>
+    <p class="text-[12px] text-ink-soft">Tekan ikon bookmark di meme favorit kamu.</p>
+    <a href="/" class="mt-1 flex h-12 items-center rounded-md bg-brand px-6 font-display text-[14px] font-medium text-white transition-colors hover:bg-brand-hover">Jelajahi meme</a>
+  </div>
+  <div id="bookmarks-login" class="hidden flex-col items-center gap-4 py-24 text-center">
+    <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
+      <Icon name="lucide:lock" class="size-8 text-ink-soft" />
+    </span>
+    <p class="text-[16px] font-bold text-ink">Login dulu yuk!</p>
+    <p class="text-[12px] text-ink-soft">Meme tersimpan terhubung ke akun kamu.</p>
+    <a href="/login?next=/bookmarks" class="mt-1 flex h-12 items-center rounded-md bg-brand px-6 font-display text-[14px] font-medium text-white transition-colors hover:bg-brand-hover">Masuk</a>
+  </div>
+</Layout>
+
+<script>
+  import { revealCard } from "../scripts/postCardHTML";
+  import { bindCardActions } from "../scripts/cardActions";
+
+  const grid = document.getElementById("masonry") as HTMLElement;
+  const loading = document.getElementById("bookmarks-loading") as HTMLElement;
+  const empty = document.getElementById("bookmarks-empty") as HTMLElement;
+  const login = document.getElementById("bookmarks-login") as HTMLElement;
+
+  function showEmpty() {
+    loading.remove();
+    empty.classList.remove("hidden");
+    empty.classList.add("flex");
+  }
+
+  async function load() {
+    const session = await fetch("/api/auth/session").then((r) => r.json()).catch(() => ({ user: null }));
+    if (!session.user) {
+      loading.remove();
+      login.classList.remove("hidden");
+      login.classList.add("flex");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/posts?bookmarks=true&limit=50`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      loading.remove();
+      if (!data.posts.length) {
+        showEmpty();
+        return;
+      }
+      data.posts.forEach((post: any, i: number) => {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = revealCard(post, i, true);
+        const card = tmp.firstElementChild as HTMLElement;
+        grid.appendChild(card);
+      });
+      bindCardActions(grid);
+    } catch {
+      showEmpty();
+    }
+  }
+
+  load();
+</script>

@@ -1,0 +1,98 @@
+---
+interface Props {
+  postId: string;
+  likeCount: number;
+  showLabel?: boolean;
+}
+
+const { postId, likeCount, showLabel = false } = Astro.props;
+---
+
+<div class="flex items-center gap-2">
+  <button
+    id="like-btn"
+    data-post-id={postId}
+    data-count={likeCount}
+    class:list={[
+      "flex items-center gap-2 rounded-md bg-white font-display font-medium text-ink shadow-raised transition-all duration-200 hover:bg-neutral hover:shadow-floating active:scale-90",
+      showLabel ? "h-14 px-7 text-[17px]" : "h-12 px-6 text-[15px]",
+    ]}
+    aria-label="Reaksi ngakak"
+    aria-pressed="false"
+  >
+    <span id="like-emoji" class="text-[20px] leading-none">😆</span>
+    <span id="like-count">{likeCount}</span>
+    {showLabel && <span id="like-label" class="font-sans text-[13px] font-bold text-ink-soft">Ngakak</span>}
+  </button>
+</div>
+
+<script>
+  import { getSession, requireLoginUrl } from "../lib/session";
+
+  const btn = document.getElementById("like-btn") as HTMLButtonElement;
+  const emoji = document.getElementById("like-emoji") as HTMLElement;
+  const countEl = document.getElementById("like-count") as HTMLElement;
+  if (!btn) throw new Error("no like btn");
+  const postId = btn.dataset.postId!;
+  let count = Number(btn.dataset.count || 0);
+  let liked = false;
+
+  async function init() {
+    const { user } = await getSession();
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/like?post_id=${postId}`);
+      const data = await res.json();
+      liked = data.liked;
+      setState(false);
+    } catch {
+      /* netral */
+    }
+  }
+
+  function setState(animate: boolean) {
+    btn.classList.toggle("bg-brand-soft", liked);
+    btn.classList.toggle("text-brand", liked);
+    [emoji, countEl].forEach((el) => {
+      el.classList.toggle("text-brand", liked);
+      el.classList.toggle("text-ink", !liked);
+    });
+    btn.setAttribute("aria-pressed", String(liked));
+    if (animate) {
+      emoji.classList.remove("animate-pop");
+      void emoji.offsetWidth;
+      emoji.classList.add("animate-pop");
+    }
+  }
+
+  btn.addEventListener("click", async () => {
+    const { user } = await getSession();
+    if (!user) {
+      window.location.href = requireLoginUrl();
+      return;
+    }
+    btn.disabled = true;
+    const next = !liked;
+    liked = next;
+    count += next ? 1 : -1;
+    countEl.textContent = String(count);
+    setState(true);
+    try {
+      const res = await fetch("/api/like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ post_id: postId }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      liked = !next;
+      count += !next ? 1 : -1;
+      countEl.textContent = String(count);
+      setState(false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  init();
+</script>

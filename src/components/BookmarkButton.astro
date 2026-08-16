@@ -1,0 +1,80 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+  postId: string;
+}
+
+const { postId } = Astro.props;
+---
+
+<button
+  id="bookmark-btn"
+  data-post-id={postId}
+  class="flex size-12 items-center justify-center rounded-md bg-white text-ink shadow-raised transition-all duration-200 hover:bg-neutral hover:shadow-floating active:scale-90"
+  aria-label="Simpan meme ini"
+  aria-pressed="false"
+>
+  <Icon id="bookmark-icon" name="lucide:bookmark" class="size-5 transition-all duration-200" />
+</button>
+
+<script>
+  import { getSession, requireLoginUrl } from "../lib/session";
+
+  const btn = document.getElementById("bookmark-btn") as HTMLButtonElement;
+  const icon = document.getElementById("bookmark-icon") as HTMLElement;
+  const postId = btn.dataset.postId!;
+  let saved = false;
+
+  function setState(animate: boolean) {
+    icon.classList.toggle("text-brand", saved);
+    icon.classList.toggle("fill-brand", saved);
+    icon.classList.toggle("text-ink", !saved);
+    btn.setAttribute("aria-pressed", String(saved));
+    if (animate) {
+      icon.classList.remove("animate-pop");
+      void icon.offsetWidth;
+      icon.classList.add("animate-pop");
+    }
+  }
+
+  async function init() {
+    const { user } = await getSession();
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/bookmark?post_id=${postId}`);
+      const data = await res.json();
+      saved = data.saved;
+      setState(false);
+    } catch {
+      /* netral */
+    }
+  }
+
+  btn.addEventListener("click", async () => {
+    const { user } = await getSession();
+    if (!user) {
+      window.location.href = requireLoginUrl();
+      return;
+    }
+    btn.disabled = true;
+    const next = !saved;
+    saved = next;
+    setState(true);
+    try {
+      const res = await fetch("/api/bookmark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ post_id: postId }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      saved = !next;
+      setState(false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  init();
+</script>

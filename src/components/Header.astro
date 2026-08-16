@@ -1,0 +1,178 @@
+---
+import { Icon } from "astro-icon/components";
+import VerifiedBadge from "./VerifiedBadge.astro";
+import type { Category } from "../lib/types";
+import type { AuthUser } from "../lib/auth";
+
+interface Props {
+  categories: Category[];
+  user: AuthUser | null;
+}
+
+const { categories, user } = Astro.props;
+const pathname = Astro.url.pathname;
+const isHome = pathname === "/";
+const isBookmarks = pathname === "/bookmarks";
+const isActiveCategory = (slug: string) => pathname === `/category/${slug}`;
+---
+
+<header class="sticky top-0 z-header bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
+  <div class="flex items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
+    <a href="/" class="flex h-12 shrink-0 items-center pr-1 lg:hidden" aria-label="HAHA!">
+      <span class="font-display text-3xl font-semibold tracking-tight text-ink">
+        Haha<span class="text-brand">!</span>
+      </span>
+    </a>
+
+    <form action="/search" class="flex h-12 flex-1 items-center gap-2 rounded-md bg-offwhite px-4 focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/60">
+      <Icon name="lucide:search" class="size-5 shrink-0 text-ink-soft" />
+      <input
+        type="search"
+        name="q"
+        placeholder="Cari meme lucu..."
+        class="h-full w-full bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-soft focus:outline-none focus-visible:outline-none"
+        aria-label="Cari meme"
+      />
+    </form>
+
+    {user ? (
+      <a
+        href={`/user/${user.id}`}
+        class="flex h-12 shrink-0 items-center gap-2 rounded-md bg-neutral/30 px-2 transition-colors hover:bg-neutral"
+        title={user.display_name}
+      >
+        <span class="flex size-9 items-center justify-center rounded-md bg-brand text-[13px] font-bold text-white">
+          {user.avatar_url ? (
+            <img src={user.avatar_url} alt="" class="size-full rounded-md object-cover" />
+          ) : (
+            user.display_name.charAt(0).toUpperCase()
+          )}
+        </span>
+        <span class="flex shrink-0 items-center gap-1 text-[13px] font-bold text-ink">
+          <span class="hidden sm:inline">{user.display_name}</span>
+          {user.is_verified && <VerifiedBadge class="size-3.5" />}
+        </span>
+      </a>
+    ) : (
+      <a
+        href="/login"
+        class="flex h-12 shrink-0 items-center gap-2 rounded-md bg-brand px-5 font-display text-[14px] font-medium text-white transition-all duration-200 hover:bg-brand-hover active:scale-[0.97]"
+      >
+        <Icon name="lucide:log-in" class="size-4" />
+        Masuk
+      </a>
+    )}
+
+    <button
+      id="menu-toggle"
+      class="flex size-12 shrink-0 items-center justify-center rounded-md text-ink transition-colors hover:bg-neutral lg:hidden"
+      aria-label="Buka menu kategori"
+      aria-expanded="false"
+      aria-controls="mobile-nav"
+    >
+      <Icon id="menu-icon-open" name="lucide:menu" class="size-5" />
+      <Icon id="menu-icon-close" name="lucide:x" class="hidden size-5" />
+    </button>
+  </div>
+
+  <nav
+    id="mobile-nav"
+    class="hidden border-t border-neutral bg-white px-4 pb-4 pt-2 lg:hidden"
+    aria-label="Menu kategori"
+  >
+    <div class="flex flex-wrap gap-2">
+      <a
+        href="/"
+        class:list={[
+          "flex h-11 items-center rounded-md px-4 text-[13px] font-bold transition-colors",
+          isHome ? "bg-brand text-white" : "text-ink hover:bg-neutral",
+        ]}
+      >
+        Semua
+      </a>
+      {categories.map((c) => (
+        <a
+          href={`/category/${c.slug}`}
+          class:list={[
+            "flex h-11 items-center gap-1.5 rounded-md px-4 text-[13px] font-bold transition-colors",
+            isActiveCategory(c.slug)
+              ? "bg-brand text-white"
+              : "text-ink hover:bg-neutral",
+          ]}
+        >
+          {c.emoji} {c.name}
+        </a>
+      ))}
+    </div>
+    <div class="mt-3 flex flex-col gap-2 border-t border-neutral pt-3">
+      <a
+        href="/bookmarks"
+        class:list={[
+          "flex h-11 items-center gap-2 rounded-md text-[13px] font-bold transition-colors",
+          isBookmarks ? "text-brand" : "text-ink hover:bg-neutral",
+        ]}
+      >
+        <Icon name="lucide:bookmark" class="size-4 text-brand" />
+        Meme Tersimpan
+      </a>
+      {user ? (
+        <>
+          <a
+            href={`/user/${user.id}`}
+            class="flex h-11 items-center gap-2 rounded-md text-[13px] font-bold text-ink transition-colors hover:bg-neutral"
+          >
+            <Icon name="lucide:user" class="size-4 text-brand" />
+            Profil saya
+          </a>
+          <button
+            class="upload-trigger flex h-11 items-center justify-center gap-2 rounded-md bg-brand font-display text-[14px] font-medium text-white transition-all duration-200 hover:bg-brand-hover"
+          >
+            <Icon name="lucide:upload" class="size-4" />
+            Upload Meme
+          </button>
+        </>
+      ) : (
+        <a
+          href="/login"
+          class="flex h-11 items-center justify-center gap-2 rounded-md bg-brand font-display text-[14px] font-medium text-white transition-all duration-200 hover:bg-brand-hover"
+        >
+          <Icon name="lucide:log-in" class="size-4" />
+          Masuk
+        </a>
+      )}
+    </div>
+  </nav>
+</header>
+
+<script>
+  const toggle = document.getElementById("menu-toggle") as HTMLButtonElement;
+  const panel = document.getElementById("mobile-nav") as HTMLElement;
+  const iconOpen = document.getElementById("menu-icon-open") as HTMLElement;
+  const iconClose = document.getElementById("menu-icon-close") as HTMLElement;
+
+  function open(force: boolean) {
+    panel.classList.toggle("hidden", !force);
+    iconOpen.classList.toggle("hidden", force);
+    iconClose.classList.toggle("hidden", !force);
+    toggle.setAttribute("aria-expanded", String(force));
+  }
+
+  toggle?.addEventListener("click", () => open(panel.classList.contains("hidden")));
+  panel?.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => open(false)));
+  panel?.querySelectorAll(".upload-trigger").forEach((b) => b.addEventListener("click", () => open(false)));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") open(false);
+  });
+  window.addEventListener("click", (e) => {
+    if (!headerContains(e.target as Node)) open(false);
+  });
+
+  function headerContains(node: Node): boolean {
+    let el: Node | null = node;
+    while (el) {
+      if (el === toggle || el === panel) return true;
+      el = el.parentNode;
+    }
+    return false;
+  }
+</script>

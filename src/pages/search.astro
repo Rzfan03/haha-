@@ -1,0 +1,104 @@
+---
+import Layout from "../layouts/Layout.astro";
+import MasonryGrid from "../components/MasonryGrid.astro";
+import LoadMore from "../components/LoadMore.astro";
+import VerifiedBadge from "../components/VerifiedBadge.astro";
+import { Icon } from "astro-icon/components";
+import { serviceClient } from "../lib/auth";
+import type { Post, User } from "../lib/types";
+
+const q = (Astro.url.searchParams.get("q") ?? "").trim();
+const LIMIT = 20;
+const USER_LIMIT = 12;
+
+let posts: Post[] = [];
+let users: User[] = [];
+let title = "Search — HAHA!";
+let description = "Cari meme lucu";
+
+if (q) {
+  title = `Cari "${q}" — HAHA!`;
+  description = `Hasil pencarian untuk "${q}"`;
+  const db = serviceClient();
+  const [postsRes, usersRes] = await Promise.all([
+    db
+      .from("posts")
+      .select("*, categories(name, slug, emoji)")
+      .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
+      .order("created_at", { ascending: false })
+      .range(0, LIMIT - 1),
+    db
+      .from("users")
+      .select("id, display_name, avatar_url, banner_url, bio, is_verified, created_at")
+      .ilike("display_name", `%${q}%`)
+      .order("created_at", { ascending: false })
+      .limit(USER_LIMIT),
+  ]);
+  posts = (postsRes.data as Post[]) ?? [];
+  users = (usersRes.data as User[]) ?? [];
+}
+---
+
+<Layout title={title} description={description}>
+  <section class="mb-8">
+    <h1 class="font-display text-[26px] font-semibold text-ink">
+      {q ? <>Hasil untuk <span class="text-brand">"{q}"</span></> : "Pencarian"}
+    </h1>
+    <p class="mt-1 text-[12px] text-ink-soft">
+      {q
+        ? `${users.length} pengguna dan ${posts.length} meme ditemukan`
+        : "Ketik kata kunci di kolom search untuk mencari meme atau pengguna."}
+    </p>
+  </section>
+
+  {q && users.length > 0 && (
+    <section class="mb-10">
+      <h2 class="mb-4 flex items-center gap-2 font-display text-[18px] font-semibold text-ink">
+        <Icon name="lucide:users" class="size-5 text-brand" />
+        Pengguna
+      </h2>
+      <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {users.map((u) => (
+          <li>
+            <a
+              href={`/user/${u.id}`}
+              class="flex items-center gap-3 rounded-md bg-white p-3 shadow-raised transition-all duration-200 hover:shadow-floating"
+            >
+              <span class="flex size-11 shrink-0 items-center justify-center rounded-md bg-brand text-[15px] font-bold text-white">
+                {u.avatar_url ? (
+                  <img src={u.avatar_url} alt="" class="size-full rounded-md object-cover" />
+                ) : (
+                  u.display_name.charAt(0).toUpperCase()
+                )}
+              </span>
+              <span class="flex min-w-0 flex-1 items-center gap-1 text-[14px] font-bold text-ink">
+                <span class="truncate">{u.display_name}</span>
+                {u.is_verified && <VerifiedBadge class="size-4 shrink-0" />}
+              </span>
+              <Icon name="lucide:chevron-right" class="size-4 shrink-0 text-ink-soft" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {q && posts.length > 0 && (
+    <>
+      <div id="masonry">
+        <MasonryGrid posts={posts} />
+      </div>
+      <LoadMore offset={posts.length} limit={LIMIT} query={q} />
+    </>
+  )}
+
+  {q && posts.length === 0 && users.length === 0 && (
+    <div class="flex flex-col items-center gap-4 py-24 text-center">
+      <span class="flex size-16 items-center justify-center rounded-md bg-white shadow-raised">
+        <Icon name="lucide:search-x" class="size-8 text-ink-soft" />
+      </span>
+      <p class="text-[16px] font-bold text-ink">"{q}" tidak ditemukan</p>
+      <p class="text-[12px] text-ink-soft">Coba kata kunci lain, atau upload meme-nya kalau belum ada!</p>
+    </div>
+  )}
+</Layout>

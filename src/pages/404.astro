@@ -1,0 +1,22 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Icon } from "astro-icon/components";
+---
+
+<Layout title="404 — HAHA!" description="Halaman tidak ditemukan">
+  <div class="flex flex-col items-center gap-6 py-24 text-center">
+    <span class="flex size-20 items-center justify-center rounded-md bg-brand text-white shadow-floating animate-float">
+      <Icon name="lucide:laugh" class="size-10" />
+    </span>
+    <h1 class="font-display text-[32px] font-semibold text-ink">404 — Meme tidak ketemu!</h1>
+    <p class="max-w-sm text-[14px] text-ink-soft">Halaman ini mungkin udah dihapus atau URL-nya salah. Balik yuk, banyak meme lucu nunggu.</p>
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="/" class="flex h-12 items-center rounded-md bg-brand px-8 font-display text-[14px] font-medium text-white transition-colors hover:bg-brand-hover">
+        Kembali ke beranda
+      </a>
+      <a href="/bookmarks" class="flex h-12 items-center rounded-md bg-white px-8 font-display text-[14px] font-medium text-ink shadow-raised transition-all hover:bg-neutral">
+        Lihat tersimpan
+      </a>
+    </div>
+  </div>
+</Layout>

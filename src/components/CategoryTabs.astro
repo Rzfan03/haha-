@@ -1,0 +1,37 @@
+---
+import { getCategories } from "../lib/categories";
+
+const categories = await getCategories();
+const pathname = Astro.url.pathname;
+const isHome = pathname === "/";
+const isActiveCategory = (slug: string) => pathname === `/category/${slug}`;
+---
+
+<nav
+  class="sticky top-[72px] z-header -mx-4 mb-6 hidden gap-2 overflow-x-auto border-b border-neutral bg-offwhite/95 px-4 py-3 backdrop-blur lg:flex"
+  aria-label="Kategori meme"
+>
+  <a
+    href="/"
+    class:list={[
+      "flex h-10 shrink-0 items-center gap-1.5 rounded-md px-4 text-[13px] font-bold transition-colors duration-200",
+      isHome ? "bg-brand text-white shadow-floating" : "bg-white text-ink shadow-raised hover:bg-neutral",
+    ]}
+  >
+    Semua
+  </a>
+  {categories.map((c) => (
+    <a
+      href={`/category/${c.slug}`}
+      class:list={[
+        "flex h-10 shrink-0 items-center gap-1.5 rounded-md px-4 text-[13px] font-bold transition-colors duration-200",
+        isActiveCategory(c.slug)
+          ? "bg-brand text-white shadow-floating"
+          : "bg-white text-ink shadow-raised hover:bg-neutral",
+      ]}
+    >
+      <span class="text-[15px] leading-none">{c.emoji}</span>
+      {c.name}
+    </a>
+  ))}
+</nav>

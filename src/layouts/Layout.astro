@@ -1,0 +1,53 @@
+---
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Sidebar from "../components/Sidebar.astro";
+import UploadModal from "../components/UploadModal.astro";
+import Toast from "../components/Toast.astro";
+import { getCategories } from "../lib/categories";
+import type { Category } from "../lib/types";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = "HAHA!", description = "Kumpulan meme lucu — upload, like, dan simpan meme favoritmu" } = Astro.props;
+
+const categories: Category[] = await getCategories();
+const user = Astro.locals.user;
+---
+
+<!doctype html>
+<html lang="id" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/png" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen">
+    <div class="lg:flex lg:items-start">
+      <Sidebar categories={categories} user={user} />
+      <div class="min-w-0 flex-1">
+        <Header categories={categories} user={user} />
+        <main class="mx-auto max-w-[1440px] px-4 py-8 sm:px-6">
+          <slot />
+        </main>
+      </div>
+    </div>
+    <UploadModal categories={categories} />
+    <Toast />
+  </body>
+</html>

@@ -1,0 +1,161 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Icon } from "astro-icon/components";
+---
+
+<Layout title="Masuk — HAHA!">
+  <div class="mx-auto max-w-md">
+    <div class="rounded-md bg-white p-8 shadow-floating">
+      <div class="mb-6 text-center">
+        <span class="mx-auto flex size-14 items-center justify-center rounded-md bg-brand text-[24px] shadow-raised">😆</span>
+        <h1 class="mt-4 font-display text-[24px] font-semibold text-ink">Masuk ke Haha<span class="text-brand">!</span></h1>
+        <p class="mt-1 text-[13px] text-ink-soft">Upload, like, komen, dan simpan meme favoritmu.</p>
+      </div>
+
+      <div class="mb-5 flex rounded-md bg-offwhite p-1" role="tablist" aria-label="Pilih mode">
+        <button
+          id="tab-login"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          class="h-10 flex-1 rounded-md bg-white text-[14px] font-bold text-ink shadow-raised transition-all"
+        >
+          Masuk
+        </button>
+        <button
+          id="tab-register"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          class="h-10 flex-1 rounded-md text-[14px] font-bold text-ink-soft transition-all hover:text-ink"
+        >
+          Daftar
+        </button>
+      </div>
+
+      <form id="auth-form" class="flex flex-col gap-4">
+        <div id="field-name" class="hidden">
+          <label for="auth-name" class="mb-1.5 block text-[13px] font-bold text-ink">Nama tampilan</label>
+          <input
+            id="auth-name"
+            name="display_name"
+            type="text"
+            maxlength="30"
+            placeholder="cth: Si Tukang Ngakak"
+            class="w-full rounded-md border border-[#919190] bg-white px-4 py-3 text-[14px] text-ink outline-none transition-all placeholder:text-ink-soft focus:border-brand focus:ring-2 focus:ring-brand/60"
+          />
+        </div>
+        <div>
+          <label for="auth-email" class="mb-1.5 block text-[13px] font-bold text-ink">Email</label>
+          <input
+            id="auth-email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="kamu@email.com"
+            class="w-full rounded-md border border-[#919190] bg-white px-4 py-3 text-[14px] text-ink outline-none transition-all placeholder:text-ink-soft focus:border-brand focus:ring-2 focus:ring-brand/60"
+          />
+        </div>
+        <div>
+          <label for="auth-password" class="mb-1.5 block text-[13px] font-bold text-ink">Password</label>
+          <input
+            id="auth-password"
+            name="password"
+            type="password"
+            required
+            minlength="8"
+            autocomplete="current-password"
+            placeholder="Minimal 8 karakter"
+            class="w-full rounded-md border border-[#919190] bg-white px-4 py-3 text-[14px] text-ink outline-none transition-all placeholder:text-ink-soft focus:border-brand focus:ring-2 focus:ring-brand/60"
+          />
+        </div>
+
+        <p id="auth-error" role="alert" class="hidden items-center gap-1.5 rounded-md bg-error/10 px-3 py-2.5 text-[13px] font-bold text-error"></p>
+
+        <button
+          type="submit"
+          class="flex h-12 items-center justify-center gap-2 rounded-md bg-brand font-display text-[15px] font-medium text-white transition-all duration-200 hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-neutral disabled:text-ink-soft"
+        >
+          <Icon id="auth-spinner" name="lucide:loader-2" class="hidden size-4 animate-spin" />
+          <span id="auth-submit-label">Masuk</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const mode = { login: "login", register: "register" } as const;
+  let current: keyof typeof mode = "login";
+
+  const next = new URLSearchParams(window.location.search).get("next") || "/";
+
+  const tabLogin = document.getElementById("tab-login") as HTMLButtonElement;
+  const tabRegister = document.getElementById("tab-register") as HTMLButtonElement;
+  const fieldName = document.getElementById("field-name") as HTMLDivElement;
+  const form = document.getElementById("auth-form") as HTMLFormElement;
+  const nameInput = document.getElementById("auth-name") as HTMLInputElement;
+  const emailInput = document.getElementById("auth-email") as HTMLInputElement;
+  const passInput = document.getElementById("auth-password") as HTMLInputElement;
+  const errorEl = document.getElementById("auth-error") as HTMLParagraphElement;
+  const submitLabel = document.getElementById("auth-submit-label") as HTMLElement;
+  const spinner = document.getElementById("auth-spinner") as HTMLElement;
+
+  function setMode(m: keyof typeof mode) {
+    current = m;
+    const isRegister = m === "register";
+    tabLogin.className = isRegister
+      ? "h-10 flex-1 rounded-md text-[14px] font-bold text-ink-soft transition-all hover:text-ink"
+      : "h-10 flex-1 rounded-md bg-white text-[14px] font-bold text-ink shadow-raised transition-all";
+    tabRegister.className = isRegister
+      ? "h-10 flex-1 rounded-md bg-white text-[14px] font-bold text-ink shadow-raised transition-all"
+      : "h-10 flex-1 rounded-md text-[14px] font-bold text-ink-soft transition-all hover:text-ink";
+    fieldName.classList.toggle("hidden", !isRegister);
+    submitLabel.textContent = isRegister ? "Daftar" : "Masuk";
+    passInput.autocomplete = isRegister ? "new-password" : "current-password";
+    hideError();
+  }
+
+  function showError(msg: string) {
+    errorEl.textContent = msg;
+    errorEl.classList.remove("hidden");
+    errorEl.classList.add("flex");
+  }
+  function hideError() {
+    errorEl.classList.add("hidden");
+    errorEl.classList.remove("flex");
+  }
+
+  tabLogin?.addEventListener("click", () => setMode("login"));
+  tabRegister?.addEventListener("click", () => setMode("register"));
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideError();
+    const email = emailInput.value.trim();
+    const password = passInput.value;
+    const display_name = nameInput.value.trim();
+    const endpoint = current === "register" ? "/api/auth/register" : "/api/auth/login";
+
+    const btn = form.querySelector("button[type=submit]") as HTMLButtonElement;
+    btn.disabled = true;
+    spinner.classList.remove("hidden");
+    submitLabel.textContent = current === "register" ? "Mendaftar..." : "Masuk...";
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, display_name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal");
+      window.location.href = next;
+    } catch (err) {
+      showError((err as Error).message);
+      btn.disabled = false;
+      spinner.classList.add("hidden");
+      submitLabel.textContent = current === "register" ? "Daftar" : "Masuk";
+    }
+  });
+</script>

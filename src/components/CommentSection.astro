@@ -1,0 +1,172 @@
+---
+import { Icon } from "astro-icon/components";
+import VerifiedBadge from "./VerifiedBadge.astro";
+import type { AuthUser } from "../lib/auth";
+import type { Comment } from "../lib/types";
+
+interface Props {
+  postId: string;
+  comments: Comment[];
+  user: AuthUser | null;
+}
+
+const { postId, comments, user } = Astro.props;
+const timeFmt = new Intl.RelativeTimeFormat("id", { numeric: "auto" });
+
+function timeAgo(date: string): string {
+  const diff = (new Date(date).getTime() - Date.now()) / 1000;
+  const abs = Math.abs(diff);
+  if (abs < 60) return "baru saja";
+  if (abs < 3600) return timeFmt.format(Math.round(diff / 60), "minute");
+  if (abs < 86400) return timeFmt.format(Math.round(diff / 3600), "hour");
+  if (abs < 604800) return timeFmt.format(Math.round(diff / 86400), "day");
+  return new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+---
+
+<section class="rounded-md bg-white p-6 shadow-raised">
+  <h2 class="mb-6 flex items-center gap-2 font-display text-[18px] font-semibold text-ink">
+    <Icon name="lucide:message-circle" class="size-5 text-brand" />
+    Komentar <span id="comment-count" class="text-ink-soft">({comments.length})</span>
+  </h2>
+
+  <ul id="comment-list" class="mb-6 space-y-4" aria-live="polite">
+    {comments.map((c) => (
+      <li class="flex gap-3 rounded-md bg-offwhite p-4">
+        <span class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-[12px] font-bold text-white">
+          {c.users?.avatar_url ? (
+            <img src={c.users.avatar_url} alt="" class="size-full rounded-full object-cover" loading="lazy" />
+          ) : (
+            (c.author_name || "A").charAt(0).toUpperCase()
+          )}
+        </span>
+        <div class="min-w-0">
+          <div class="flex items-baseline gap-2">
+            <span class="flex items-center gap-1 text-[12px] font-bold text-ink">
+              {c.author_name || "Anonim"}
+              {c.user_id && c.users?.is_verified && <VerifiedBadge class="size-3.5" />}
+            </span>
+            <span class="text-[12px] text-ink-soft">{timeAgo(c.created_at)}</span>
+          </div>
+          <p class="mt-1 text-[14px] text-ink">{c.content}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+
+  {comments.length === 0 && (
+    <div id="comment-empty" class="mb-6 flex flex-col items-center gap-2 rounded-md bg-offwhite px-6 py-10 text-center">
+      <Icon name="lucide:message-circle" class="size-8 text-ink-soft" />
+      <p class="text-[14px] font-bold text-ink">Belum ada komentar</p>
+      <p class="text-[12px] text-ink-soft">Jadi yang pertama kasih komentar lucu!</p>
+    </div>
+  )}
+
+  {user ? (
+    <form id="comment-form" data-post-id={postId} data-user-name={user.display_name} data-user-verified={String(user.is_verified)} data-user-avatar={user.avatar_url ?? ""} class="flex flex-col gap-3">
+      <div class="flex items-center gap-2">
+        <span class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-[12px] font-bold text-white">
+          {user.avatar_url ? (
+            <img src={user.avatar_url} alt="" class="size-full rounded-full object-cover" />
+          ) : (
+            user.display_name.charAt(0).toUpperCase()
+          )}
+        </span>
+        <span class="text-[13px] font-bold text-ink">{user.display_name}</span>
+      </div>
+      <textarea
+        id="comment-content"
+        name="content"
+        rows="3"
+        required
+        maxlength="500"
+        placeholder="Tulis komentar lucu..."
+        class="w-full resize-none rounded-md border border-[#919190] bg-white px-4 py-3 text-[14px] text-ink outline-none transition-all placeholder:text-ink-soft focus:border-ink focus:ring-2 focus:ring-brand"
+      ></textarea>
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="flex h-12 items-center gap-2 rounded-md bg-brand px-6 text-[14px] text-white transition-colors duration-200 hover:bg-brand-hover active:bg-brand-active disabled:cursor-not-allowed disabled:bg-neutral disabled:text-ink-soft"
+        >
+          <Icon name="lucide:send" class="size-4" />
+          Kirim
+        </button>
+      </div>
+    </form>
+  ) : (
+    <a
+      href={`/login?next=${encodeURIComponent(`/post/${postId}`)}`}
+      class="flex h-12 items-center justify-center gap-2 rounded-md bg-offwhite px-6 text-[14px] font-bold text-brand transition-colors hover:bg-neutral"
+    >
+      <Icon name="lucide:log-in" class="size-4" />
+      Login untuk berkomentar
+    </a>
+  )}
+</section>
+
+<script>
+  const form = document.getElementById("comment-form") as HTMLFormElement | null;
+  if (form) {
+    const list = document.getElementById("comment-list") as HTMLElement;
+    const countEl = document.getElementById("comment-count") as HTMLElement;
+    const contentInput = document.getElementById("comment-content") as HTMLTextAreaElement;
+    const commentEmpty = document.getElementById("comment-empty");
+    const pid = form.dataset.postId;
+    const userName = form.dataset.userName || "Pengguna";
+    const userVerified = form.dataset.userVerified === "true";
+    const userAvatar = form.dataset.userAvatar || "";
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const content = contentInput.value.trim();
+      if (!content) return;
+
+      const submitBtn = form.querySelector("button[type=submit]") as HTMLButtonElement;
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch("/api/comment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ post_id: pid, content }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Gagal kirim");
+        contentInput.value = "";
+        const li = document.createElement("li");
+        li.className = "flex gap-3 rounded-md bg-offwhite p-4 animate-fade-up";
+        li.innerHTML = `
+          ${userAvatar
+            ? `<span class="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand text-[12px] font-bold text-white"><img src="${userAvatar}" alt="" class="size-full rounded-full object-cover" /></span>`
+            : `<span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-[12px] font-bold text-white">${userName.charAt(0).toUpperCase()}</span>`}
+          <div class="min-w-0">
+            <div class="flex items-baseline gap-2">
+              <span class="flex items-center gap-1 text-[12px] font-bold text-ink" id="comment-author"></span>
+              <span class="text-[12px] text-ink-soft">baru saja</span>
+            </div>
+            <p class="mt-1 text-[14px] text-ink"></p>
+          </div>`;
+        li.querySelector("#comment-author")!.textContent = userName;
+        if (userVerified) {
+          const badge = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          badge.setAttribute("class", "size-3.5 shrink-0");
+          badge.setAttribute("viewBox", "0 0 24 24");
+          badge.setAttribute("fill", "none");
+          badge.setAttribute("stroke", "#3B82F6");
+          badge.setAttribute("stroke-width", "2");
+          badge.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>';
+          li.querySelector("#comment-author")!.appendChild(badge);
+        }
+        li.querySelector("p")!.textContent = content;
+        list.prepend(li);
+        commentEmpty?.remove();
+        const n = Number(countEl.textContent?.replace(/[()]/g, "") || 0) + 1;
+        countEl.textContent = `(${n})`;
+        window.dispatchEvent(new CustomEvent("haha:toast", { detail: { message: "Komentar terkirim! 💬" } }));
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent("haha:toast", { detail: { message: (err as Error).message, type: "error" } }));
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+</script>
