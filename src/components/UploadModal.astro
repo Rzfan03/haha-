@@ -10,7 +10,7 @@ const { categories } = Astro.props;
 const MAX_MB = 5;
 ---
 
-<div id="upload-modal" class="fixed inset-0 z-modal hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Upload meme">
+<div id="upload-modal" class="fixed inset-0 z-[1000] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Upload meme">
   <div id="upload-backdrop" class="absolute inset-0 bg-ink/50 backdrop-blur-sm"></div>
   <div class="relative z-10 flex max-h-[92vh] w-full max-w-[720px] flex-col overflow-hidden rounded-md bg-white shadow-modal animate-scale-in">
     <div class="flex items-start justify-between border-b border-neutral px-6 py-5 sm:px-8">

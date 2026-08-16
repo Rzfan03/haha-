@@ -49,14 +49,14 @@ const isOwn = viewer?.id === user?.id;
           {user.banner_url && <img src={user.banner_url} alt="" class="h-full w-full object-cover" />}
         </div>
         <div class="px-6 pb-6">
-          <div class="-mt-8 flex flex-wrap items-end justify-between gap-4">
-            <div class="flex items-end gap-4">
-              <span class="relative z-10 flex size-20 shrink-0 items-center justify-center rounded-md bg-brand text-[30px] font-bold text-white shadow-floating ring-4 ring-white">
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <div class="flex items-end gap-3 sm:gap-4">
+              <span class="relative z-10 -mt-6 flex size-14 shrink-0 items-center justify-center rounded-md bg-brand text-[20px] font-bold text-white shadow-floating ring-4 ring-white sm:-mt-8 sm:size-20 sm:text-[30px]">
                 {user.avatar_url ? <img src={user.avatar_url} alt="" class="size-full rounded-md object-cover" /> : user.display_name.charAt(0).toUpperCase()}
               </span>
-              <div class="pb-1">
-                <h1 class="flex items-center gap-1.5 font-display text-[22px] font-semibold text-ink">
-                  {user.display_name}
+              <div class="min-w-0 pb-1">
+                <h1 class="flex items-center gap-1.5 font-display text-[17px] font-semibold text-ink sm:text-[22px]">
+                  <span class="truncate">{user.display_name}</span>
                   {user.is_verified && <VerifiedBadge class="size-5" />}
                 </h1>
                 <p class="flex items-center gap-1.5 text-[12px] text-ink-soft">
@@ -69,7 +69,7 @@ const isOwn = viewer?.id === user?.id;
             {isOwn ? (
               <a
                 href="/account"
-                class="flex h-11 items-center gap-2 rounded-md bg-offwhite px-5 text-[13px] font-bold text-ink transition-colors hover:bg-neutral"
+                class="hidden h-11 items-center gap-2 rounded-md bg-offwhite px-5 text-[13px] font-bold text-ink transition-colors hover:bg-neutral sm:flex"
               >
                 <Icon name="lucide:settings" class="size-4" />
                 Edit profil
@@ -79,7 +79,7 @@ const isOwn = viewer?.id === user?.id;
                 id="admin-verify-btn"
                 data-user-id={user.id}
                 data-verified={String(user.is_verified)}
-                class="flex h-11 items-center gap-2 rounded-md bg-offwhite px-5 text-[13px] font-bold text-ink transition-colors hover:bg-neutral"
+                class="flex h-11 w-full items-center justify-center gap-2 rounded-md bg-offwhite px-5 text-[13px] font-bold text-ink transition-colors hover:bg-neutral sm:w-auto"
               >
                 <Icon name="lucide:badge-check" class="size-4 text-brand" />
                 {user.is_verified ? "Cabut verifikasi" : "Verifikasi akun"}
@@ -90,7 +90,7 @@ const isOwn = viewer?.id === user?.id;
                 data-user-id={user.id}
                 data-following={String(isFollowing)}
                 class:list={[
-                  "flex h-11 items-center gap-2 rounded-md px-6 text-[13px] font-bold transition-all duration-200",
+                  "flex h-11 w-full items-center justify-center gap-2 rounded-md px-6 text-[13px] font-bold transition-all duration-200 sm:w-auto",
                   isFollowing ? "bg-offwhite text-ink hover:bg-neutral" : "bg-brand text-white hover:bg-brand-hover",
                 ]}
               >
@@ -106,6 +106,16 @@ const isOwn = viewer?.id === user?.id;
             <a href={`/user/${user.id}/followers`} class="text-ink transition-colors hover:text-brand"><b class="font-bold text-ink">{followers}</b> <span class="text-ink-soft">pengikut</span></a>
             <a href={`/user/${user.id}/following`} class="text-ink transition-colors hover:text-brand"><b class="font-bold text-ink">{following}</b> <span class="text-ink-soft">mengikuti</span></a>
           </div>
+
+          {isOwn && (
+            <a
+              href="/account"
+              class="mt-4 flex h-11 items-center justify-center gap-2 rounded-md bg-offwhite text-[13px] font-bold text-ink transition-colors hover:bg-neutral sm:hidden"
+            >
+              <Icon name="lucide:settings" class="size-4" />
+              Edit profil
+            </a>
+          )}
         </div>
       </div>
 

@@ -16,7 +16,7 @@ const isBookmarks = pathname === "/bookmarks";
 const isActiveCategory = (slug: string) => pathname === `/category/${slug}`;
 ---
 
-<header class="sticky top-0 z-header bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
+<header class="sticky top-0 z-[999] bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)]">
   <div class="flex items-center gap-2 px-4 py-3 sm:gap-3 sm:px-6">
     <a href="/" class="flex h-12 shrink-0 items-center pr-1 lg:hidden" aria-label="HAHA!">
       <span class="font-display text-3xl font-semibold tracking-tight text-ink">
@@ -116,21 +116,12 @@ const isActiveCategory = (slug: string) => pathname === `/category/${slug}`;
         Meme Tersimpan
       </a>
       {user ? (
-        <>
-          <a
-            href={`/user/${user.id}`}
-            class="flex h-11 items-center gap-2 rounded-md text-[13px] font-bold text-ink transition-colors hover:bg-neutral"
-          >
-            <Icon name="lucide:user" class="size-4 text-brand" />
-            Profil saya
-          </a>
-          <button
-            class="upload-trigger flex h-11 items-center justify-center gap-2 rounded-md bg-brand font-display text-[14px] font-medium text-white transition-all duration-200 hover:bg-brand-hover"
-          >
-            <Icon name="lucide:upload" class="size-4" />
-            Upload Meme
-          </button>
-        </>
+        <button
+          class="upload-trigger flex h-11 items-center justify-center gap-2 rounded-md bg-brand font-display text-[14px] font-medium text-white transition-all duration-200 hover:bg-brand-hover"
+        >
+          <Icon name="lucide:upload" class="size-4" />
+          Upload Meme
+        </button>
       ) : (
         <a
           href="/login"

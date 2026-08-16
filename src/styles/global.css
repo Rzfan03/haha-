@@ -27,10 +27,6 @@
   --shadow-modal: 0 20px 25px rgba(0, 0, 0, 0.15);
   --shadow-tooltip: 0 8px 16px rgba(0, 0, 0, 0.2);
 
-  --z-header: 100;
-  --z-modal: 200;
-  --z-toast: 300;
-
   --animate-fade-up: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-scale-in: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
